@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let drawerPopover = NSPopover()
     private var walkTimer: Timer?
     private var walkPhase = 0
+    private var hotKeys: HotKeys?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -35,6 +36,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let drawerHost = NSHostingController(rootView: MenuContent(model: model))
         drawerHost.sizingOptions = [.preferredContentSize]
         drawerPopover.contentViewController = drawerHost
+
+        // Global hotkeys: ⌘⇧M Google Meet, ⌘⇧Z Zoom, ⌘⇧T Teams.
+        hotKeys = HotKeys { [weak self] id in
+            let provider: Provider = id == 1 ? .google : id == 2 ? .zoom : .microsoft
+            self?.instantMeeting(provider: provider)
+        }
 
         // Close the popovers when the user clicks in any other app/window.
         NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
@@ -73,6 +80,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         drawerPopover.performClose(nil)
         startWalking()
         model.newInstantMeeting()
+    }
+
+    /// Global hotkey → create an instant meeting with a specific provider.
+    private func instantMeeting(provider: Provider) {
+        guard model.hasAccount(provider) else { NSSound.beep(); return }
+        NSApp.activate(ignoringOtherApps: true)   // bring the popover forward
+        drawerPopover.performClose(nil)
+        startWalking()
+        model.newInstantMeeting(provider: provider)
+        // The walk timer shows the link widget when the link is ready.
     }
 
     // MARK: Popover helpers

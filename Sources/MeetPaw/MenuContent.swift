@@ -72,14 +72,6 @@ struct MenuContent: View {
         .buttonStyle(.plain)
     }
 
-    private func providerShortcut(_ p: Provider) -> KeyEquivalent {
-        switch p {
-        case .google: return "m"
-        case .zoom: return "z"
-        case .microsoft: return "t"
-        }
-    }
-
     private var selectedLabel: String {
         guard let sel = model.selectedAccountID,
               let a = model.accounts.first(where: { $0.id == sel }) else { return "All accounts" }
@@ -110,16 +102,16 @@ struct MenuContent: View {
             }
 
             if model.signedProviders.count > 1 {
-                Section("Default meeting provider") {
+                Picker(selection: Binding(
+                    get: { model.defaultProvider },
+                    set: { model.setDefaultProvider($0) })) {
                     ForEach(model.signedProviders) { p in
-                        Button { model.setDefaultProvider(p) } label: {
-                            Label {
-                                Text((model.defaultProvider == p ? "✓ " : "") + p.name)
-                            } icon: { ProviderLogo.menuIcon(p) }
-                        }
-                        .keyboardShortcut(providerShortcut(p), modifiers: [.command, .shift])
+                        Label { Text(p.name) } icon: { ProviderLogo.menuIcon(p) }.tag(p)
                     }
+                } label: {
+                    Text("Default meeting provider")
                 }
+                .pickerStyle(.inline)
             }
 
             Section("Settings") {

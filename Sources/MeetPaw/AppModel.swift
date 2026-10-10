@@ -204,9 +204,18 @@ final class AppModel {
 
     // MARK: Instant meeting (default account's provider)
 
-    func newInstantMeeting() {
-        guard let account = defaultAccount, let client = clients[account.id] else {
-            state = .error("No account selected."); return
+    /// Does an account exist for this provider (for global-hotkey gating)?
+    func hasAccount(_ provider: Provider) -> Bool {
+        accounts.contains { $0.provider == provider }
+    }
+
+    func newInstantMeeting(provider: Provider? = nil) {
+        let account: Account? = {
+            if let provider { return accounts.first { $0.provider == provider } }
+            return defaultAccount
+        }()
+        guard let account, let client = clients[account.id] else {
+            state = .error("No account for that provider."); return
         }
         Task {
             creatingLink = true
