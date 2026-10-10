@@ -34,6 +34,11 @@ enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
     /// Teams logos are glyphs that need padding (fit).
     var avatarFills: Bool { self == .zoom }
 
+    /// On the sign-in screen Google shows as "Google" with the G favicon;
+    /// elsewhere it's "Google Meet" with the Meet logo.
+    var signInName: String { self == .google ? "Google" : name }
+    var signInLogoResource: String { self == .google ? "google_g" : logoResource }
+
     var keychainAccount: String { rawValue }
     var credentialsFile: String {
         switch self {

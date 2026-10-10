@@ -4,25 +4,30 @@ import AppKit
 /// Loads each provider's logo SVG once (user drops them in Resources);
 /// falls back to an SF Symbol if the file isn't there yet.
 enum ProviderLogo {
-    private static var cache: [Provider: NSImage] = [:]
-    static func image(_ p: Provider) -> NSImage? {
-        if let c = cache[p] { return c }
+    private static var cache: [String: NSImage] = [:]
+    static func image(named resource: String) -> NSImage? {
+        if let c = cache[resource] { return c }
         for ext in ["svg", "png"] {
-            if let url = Bundle.module.url(forResource: p.logoResource, withExtension: ext),
+            if let url = Bundle.module.url(forResource: resource, withExtension: ext),
                let img = NSImage(contentsOf: url) {
-                cache[p] = img
+                cache[resource] = img
                 return img
             }
         }
         return nil
     }
+    static func image(_ p: Provider) -> NSImage? { image(named: p.logoResource) }
 
-    /// Small image for native menu items (menus can't render the ZStack avatar).
+    /// Small, aspect-correct image for native menu items.
     static func menuIcon(_ p: Provider) -> Image? {
         guard let img = image(p) else { return nil }
-        let copy = NSImage(size: NSSize(width: 16, height: 16))
+        let box: CGFloat = 16
+        let s = img.size
+        let scale = min(box / s.width, box / s.height)
+        let w = s.width * scale, h = s.height * scale
+        let copy = NSImage(size: NSSize(width: box, height: box))
         copy.lockFocus()
-        img.draw(in: NSRect(x: 0, y: 0, width: 16, height: 16),
+        img.draw(in: NSRect(x: (box - w) / 2, y: (box - h) / 2, width: w, height: h),
                  from: .zero, operation: .sourceOver, fraction: 1)
         copy.unlockFocus()
         return Image(nsImage: copy)
@@ -33,12 +38,20 @@ enum ProviderLogo {
 struct ProviderLogoView: View {
     let provider: Provider
     var size: CGFloat = 20
+    var resource: String? = nil     // override (e.g. Google "G" on sign-in)
+
+    private var logo: NSImage? {
+        ProviderLogo.image(named: resource ?? provider.logoResource)
+    }
+    // A custom resource (the G favicon) is a glyph → fit; only Zoom fills.
+    private var fills: Bool { resource == nil && provider.avatarFills }
+
     var body: some View {
         ZStack {
             Circle().fill(.white)
-            if let logo = ProviderLogo.image(provider) {
-                if provider.avatarFills {
-                    Image(nsImage: logo).resizable().scaledToFill()
+            if let logo {
+                if fills {
+                    Image(nsImage: logo).resizable().scaledToFill().scaleEffect(1.14)
                 } else {
                     Image(nsImage: logo).resizable().scaledToFit()
                         .frame(width: size * 0.64, height: size * 0.64)
@@ -117,8 +130,8 @@ struct ProviderSignIn: View {
             if hasCreds { model.addAccount(provider) } else { model.openCredentialsFolder() }
         } label: {
             HStack(spacing: 10) {
-                ProviderLogoView(provider: provider, size: 28)
-                Text(hasCreds ? "Sign in with \(provider.name)" : "Add \(provider.name) credentials…")
+                ProviderLogoView(provider: provider, size: 28, resource: provider.signInLogoResource)
+                Text(hasCreds ? "Sign in with \(provider.signInName)" : "Add \(provider.signInName) credentials…")
                     .fontWeight(.medium)
                 Spacer()
                 if !hasCreds {
