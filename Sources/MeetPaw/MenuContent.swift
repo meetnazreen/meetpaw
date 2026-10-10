@@ -8,6 +8,7 @@ struct MenuContent: View {
     @State private var showInstant = false   // drawer instant-meeting widget
     @State private var editingEvent: AccountEvent?    // non-nil → editing
     @State private var showAddAccount = false
+    @State private var showAccountSwitcher = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -15,6 +16,8 @@ struct MenuContent: View {
             Divider()
             if showAddAccount {
                 addAccountScreen
+            } else if showAccountSwitcher {
+                AccountSwitcher(model: model) { showAccountSwitcher = false }
             } else {
                 body(for: model.state)
             }
@@ -53,32 +56,20 @@ struct MenuContent: View {
         .padding(12)
     }
 
-    // Account filter: All accounts + each account by email.
+    // Account filter toggle → opens the rich AccountSwitcher panel.
     private var accountDropdown: some View {
-        Menu {
-            Button { model.selectedAccountID = nil } label: {
-                if model.selectedAccountID == nil { Label("All accounts", systemImage: "checkmark") }
-                else { Text("All accounts") }
-            }
-            Divider()
-            ForEach(model.accounts) { account in
-                Button { model.selectedAccountID = account.id } label: {
-                    if model.selectedAccountID == account.id { Label(account.email, systemImage: "checkmark") }
-                    else { Text(account.email) }
-                }
-            }
+        Button {
+            showAddAccount = false
+            showAccountSwitcher.toggle()
         } label: {
             HStack(spacing: 4) {
                 Text(selectedLabel).lineLimit(1).font(.callout)
-                Image(systemName: "chevron.down").font(.caption2)
+                Image(systemName: showAccountSwitcher ? "chevron.up" : "chevron.down").font(.caption2)
             }
             .foregroundStyle(.secondary)
             .frame(maxWidth: 140)
         }
-        .menuStyle(.borderlessButton)
         .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-        .fixedSize()
     }
 
     private var selectedLabel: String {

@@ -41,6 +41,58 @@ struct ProviderLogoView: View {
     }
 }
 
+/// Account switcher: avatar + email, platform below. "All accounts" + each one.
+struct AccountSwitcher: View {
+    @Bindable var model: AppModel
+    let onSelect: () -> Void
+
+    var body: some View {
+        VStack(spacing: 6) {
+            allRow
+            ForEach(model.accounts) { account in
+                row(id: account.id,
+                    avatar: AnyView(ProviderLogoView(provider: account.provider, size: 34)),
+                    title: account.email, subtitle: account.provider.name)
+            }
+        }
+        .padding(12)
+    }
+
+    private var allRow: some View {
+        row(id: nil,
+            avatar: AnyView(
+                ZStack {
+                    Circle().fill(.white)
+                    Image(systemName: "person.2.fill").font(.system(size: 15)).foregroundStyle(.secondary)
+                }.frame(width: 34, height: 34).overlay(Circle().strokeBorder(.black.opacity(0.06)))),
+            title: "All accounts",
+            subtitle: "\(model.accounts.count) account\(model.accounts.count == 1 ? "" : "s")")
+    }
+
+    @ViewBuilder
+    private func row(id: String?, avatar: AnyView, title: String, subtitle: String) -> some View {
+        let selected = model.selectedAccountID == id
+        Button {
+            model.selectedAccountID = id
+            onSelect()
+        } label: {
+            HStack(spacing: 10) {
+                avatar
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title).fontWeight(.medium).lineLimit(1)
+                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                if selected { Image(systemName: "checkmark").foregroundStyle(.tint) }
+            }
+            .padding(.vertical, 8).padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassCard(cornerRadius: 12)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 /// Sign-in / add-account screen: one button per provider.
 struct ProviderSignIn: View {
     @Bindable var model: AppModel
