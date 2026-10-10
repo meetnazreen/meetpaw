@@ -35,6 +35,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let drawerHost = NSHostingController(rootView: MenuContent(model: model))
         drawerHost.sizingOptions = [.preferredContentSize]
         drawerPopover.contentViewController = drawerHost
+
+        // Close the popovers when the user clicks in any other app/window.
+        NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            self?.closePopovers()
+        }
+        NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification,
+                                               object: nil, queue: .main) { [weak self] _ in
+            self?.closePopovers()
+        }
+    }
+
+    private func closePopovers() {
+        if linkPopover.isShown { linkPopover.performClose(nil) }
+        if drawerPopover.isShown { drawerPopover.performClose(nil) }
     }
 
     @objc private func handleClick() {
