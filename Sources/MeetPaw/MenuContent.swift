@@ -111,16 +111,6 @@ struct MenuContent: View {
             .disabled(model.creatingLink)
             .padding(12)
 
-            if let link = model.createdLink {
-                GlassLinkCard(url: link,
-                              copy: { model.copyLink() },
-                              join: { model.openCreatedLink() },
-                              dismiss: { model.dismissCreatedLink() })
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 12)
-                    .transition(.scale.combined(with: .opacity))
-            }
-
             if model.meetings.isEmpty {
                 Text("No upcoming meetings in the next 24 hours.")
                     .font(.callout).foregroundStyle(.secondary)
