@@ -37,7 +37,12 @@ struct ProviderLogoView: View {
         ZStack {
             Circle().fill(.white)
             if let logo = ProviderLogo.image(provider) {
-                Image(nsImage: logo).resizable().scaledToFill()
+                if provider.avatarFills {
+                    Image(nsImage: logo).resizable().scaledToFill()
+                } else {
+                    Image(nsImage: logo).resizable().scaledToFit()
+                        .frame(width: size * 0.64, height: size * 0.64)
+                }
             } else {
                 Image(systemName: provider.fallbackSymbol)
                     .font(.system(size: size * 0.5)).foregroundStyle(.secondary)

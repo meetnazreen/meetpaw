@@ -30,6 +30,10 @@ enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
         }
     }
 
+    /// Zoom's asset is a full-bleed app icon (fills the circle); the Meet and
+    /// Teams logos are glyphs that need padding (fit).
+    var avatarFills: Bool { self == .zoom }
+
     var keychainAccount: String { rawValue }
     var credentialsFile: String {
         switch self {
