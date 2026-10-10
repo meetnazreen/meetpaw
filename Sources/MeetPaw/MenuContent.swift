@@ -12,7 +12,7 @@ struct MenuContent: View {
             Divider()
             body(for: model.state)
         }
-        .frame(width: 320)
+        .frame(width: 360)
         .tint(.meetpaw)
         .animation(.spring(duration: 0.3), value: model.createdLink)
     }
