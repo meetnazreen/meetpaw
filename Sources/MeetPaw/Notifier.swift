@@ -17,15 +17,16 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     func schedule(_ meetings: [CalendarEvent]) {
         guard let center else { return }
         center.removeAllPendingNotificationRequests()
+        let leadMinutes = 15
         for event in meetings {
             guard let start = event.startDate,
-                  let url = event.meetURL else { continue }
-            let fireAt = start.addingTimeInterval(-60)
-            guard fireAt > Date() else { continue }   // already started/imminent
+                  let url = event.openURL else { continue }
+            let fireAt = start.addingTimeInterval(TimeInterval(-leadMinutes * 60))
+            guard fireAt > Date() else { continue }   // less than 15 min away / started
 
             let content = UNMutableNotificationContent()
-            content.title = event.summary ?? "Meeting starting"
-            content.body = "Starts in 1 minute · tap to join"
+            content.title = event.summary ?? "Upcoming meeting"
+            content.body = "Starts in \(leadMinutes) minutes · tap to \(event.hasMeet ? "join" : "open")"
             content.sound = .default
             content.userInfo = ["url": url.absoluteString]
 
