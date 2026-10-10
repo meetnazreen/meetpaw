@@ -76,6 +76,7 @@ struct MenuContent: View {
             .frame(maxWidth: 140)
         }
         .menuStyle(.borderlessButton)
+        .buttonStyle(.plain)
         .menuIndicator(.hidden)
         .fixedSize()
     }
