@@ -166,7 +166,8 @@ struct MeetingRow: View {
                     Text(timeLabel).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Image(systemName: "video.fill").foregroundStyle(.tint)
+                Image(systemName: event.hasMeet ? "video.fill" : "calendar")
+                    .foregroundStyle(event.hasMeet ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
             .contentShape(Rectangle())

@@ -20,7 +20,7 @@ struct GoogleAPI {
         ]
         let data = try await get(comps.url!, token: token)
         let events = try JSONDecoder().decode(EventsResponse.self, from: data).items ?? []
-        return events.filter { $0.meetURL != nil && !$0.isDeclinedByMe }
+        return events.filter { !$0.isDeclinedByMe }
     }
 
     /// Creates an instant Meet link. Tries the Meet REST API first; if that

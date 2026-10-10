@@ -21,10 +21,11 @@ enum SelfTest {
         ] }
         """
         let events = try! JSONDecoder().decode(EventsResponse.self, from: Data(json.utf8)).items!
-        let filtered = events.filter { $0.meetURL != nil && !$0.isDeclinedByMe }
+        let filtered = events.filter { !$0.isDeclinedByMe }
 
-        // a (timed+link) and b (all-day+video entry) survive; c declined, d no link.
-        assert(filtered.map(\.id) == ["a", "b"], "filter: \(filtered.map(\.id))")
+        // All upcoming events show except declined; a & b have Meet, d doesn't.
+        assert(filtered.map(\.id) == ["a", "b", "d"], "filter: \(filtered.map(\.id))")
+        assert(events[0].hasMeet && !events[3].hasMeet, "hasMeet detection wrong")
         // all-day event parses to nil startDate without throwing.
         assert(events[1].startDate == nil, "all-day should have nil startDate")
         // timed event with fractional seconds parses.

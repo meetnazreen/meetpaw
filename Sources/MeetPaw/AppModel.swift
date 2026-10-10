@@ -122,7 +122,8 @@ final class AppModel {
     func dismissCreatedLink() { createdLink = nil }
 
     func join(_ event: CalendarEvent) {
-        if let url = event.meetURL { NSWorkspace.shared.open(url) }
+        // Meet link if present, otherwise open the event in Google Calendar.
+        if let url = event.openURL { NSWorkspace.shared.open(url) }
     }
 
     func openCredentialsFolder() {

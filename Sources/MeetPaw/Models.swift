@@ -12,10 +12,11 @@ struct CalendarEvent: Codable, Identifiable {
     let start: EventDateTime?
     let end: EventDateTime?
     let hangoutLink: String?
+    let htmlLink: String?
     let conferenceData: ConferenceData?
     let attendees: [Attendee]?
 
-    /// The URL to click "Join" — prefer explicit video entry point, else hangoutLink.
+    /// The Meet URL, if this event has one.
     var meetURL: URL? {
         if let ep = conferenceData?.entryPoints?.first(where: { $0.entryPointType == "video" }),
            let uri = ep.uri, let url = URL(string: uri) {
@@ -23,6 +24,13 @@ struct CalendarEvent: Codable, Identifiable {
         }
         if let link = hangoutLink, let url = URL(string: link) { return url }
         return nil
+    }
+
+    var hasMeet: Bool { meetURL != nil }
+
+    /// What the row opens: the Meet link if present, else the event in Calendar.
+    var openURL: URL? {
+        meetURL ?? htmlLink.flatMap { URL(string: $0) }
     }
 
     /// Start time for timed events; all-day events have `date` not `dateTime`.
