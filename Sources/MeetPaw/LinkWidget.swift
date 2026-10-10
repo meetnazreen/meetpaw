@@ -4,6 +4,7 @@ import SwiftUI
 /// meeting link with a copy button, with a bezier entrance animation.
 struct LinkWidget: View {
     @Bindable var model: AppModel
+    var fillWidth = false      // true when embedded in the drawer
     let onClose: () -> Void
 
     // A springy cubic-bezier for the pop-in.
@@ -35,7 +36,7 @@ struct LinkWidget: View {
             }
         }
         .padding(12)
-        .frame(width: 300)
+        .frame(maxWidth: fillWidth ? .infinity : 300)
         .tint(.meetpaw)
         .animation(pop, value: model.createdLink)
     }

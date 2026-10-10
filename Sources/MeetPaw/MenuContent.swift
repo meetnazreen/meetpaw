@@ -104,7 +104,7 @@ struct MenuContent: View {
         if showInstant {
             // Creating/created an instant meeting from the drawer → show only
             // the link widget, hide everything else.
-            LinkWidget(model: model) {
+            LinkWidget(model: model, fillWidth: true) {
                 showInstant = false
                 model.dismissCreatedLink()
             }
