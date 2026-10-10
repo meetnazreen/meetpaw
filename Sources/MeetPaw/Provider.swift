@@ -30,8 +30,8 @@ enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
         }
     }
 
-    // All logos are glyphs that fit with padding in the round avatar.
-    var avatarFills: Bool { false }
+    // Zoom's asset is a full-bleed icon (fills the circle); others fit with padding.
+    var avatarFills: Bool { self == .zoom }
 
     /// On the sign-in screen providers use their platform name + brand logo
     /// (Google "G", Microsoft squares); elsewhere Google = "Google Meet" etc.
