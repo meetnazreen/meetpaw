@@ -44,7 +44,8 @@ struct HamburgerMenu: NSViewRepresentable {
 
         private func build() -> NSMenu {
             let menu = NSMenu()
-            menu.addItem(item("Add account…", symbol: "plus.circle.fill") { [self] in onAddAccount() })
+            let add = item("Add account…", symbol: "plus.circle.fill", accent: true) { [self] in onAddAccount() }
+            menu.addItem(add)
             if model.isSignedIn {
                 menu.addItem(item("Refresh", symbol: "arrow.clockwise") { [self] in Task { await model.refresh() } })
             }
@@ -53,8 +54,8 @@ struct HamburgerMenu: NSViewRepresentable {
                 menu.addItem(.separator())
                 menu.addItem(.sectionHeader(title: "Accounts"))
                 for a in model.accounts {
-                    let it = item("\(a.email) — Sign out", image: ProviderLogo.avatarImage(a.provider, size: 16)) { [self] in model.signOut(a) }
-                    menu.addItem(it)
+                    // No avatar in the Accounts section.
+                    menu.addItem(item("\(a.email) — Sign out") { [self] in model.signOut(a) })
                 }
             }
 
@@ -80,12 +81,25 @@ struct HamburgerMenu: NSViewRepresentable {
         }
 
         private func item(_ title: String, symbol: String? = nil, image: NSImage? = nil,
-                          action: @escaping () -> Void) -> NSMenuItem {
+                          accent: Bool = false, action: @escaping () -> Void) -> NSMenuItem {
             let it = NSMenuItem(title: title, action: #selector(fire(_:)), keyEquivalent: "")
             it.target = self
             it.representedObject = action
             if let image { it.image = image }
-            else if let symbol { it.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) }
+            else if let symbol {
+                var img = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+                if accent {
+                    let cfg = NSImage.SymbolConfiguration(paletteColors: [NSColor(Color.meetpaw)])
+                    img = img?.withSymbolConfiguration(cfg)
+                }
+                it.image = img
+            }
+            if accent {
+                it.attributedTitle = NSAttributedString(string: title, attributes: [
+                    .foregroundColor: NSColor(Color.meetpaw),
+                    .font: NSFont.menuFont(ofSize: 0),
+                ])
+            }
             return it
         }
 
