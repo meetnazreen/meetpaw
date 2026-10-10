@@ -54,7 +54,7 @@ enum Provider: String, CaseIterable, Identifiable {
             return OAuthConfig(
                 authURL: "https://zoom.us/oauth/authorize",
                 tokenURL: "https://zoom.us/oauth/token",
-                scopes: ["meeting:write"],                 // adjust to granular scope from Marketplace
+                scopes: ["meeting:write:meeting"],          // granular user-managed scope
                 redirectHost: "127.0.0.1", fixedPort: 8765, usePKCE: true,
                 clientAuth: .basicHeader, sendScopeOnToken: false,
                 extraAuthParams: [:])
