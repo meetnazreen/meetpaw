@@ -7,25 +7,37 @@ enum ProviderLogo {
     private static var cache: [Provider: NSImage] = [:]
     static func image(_ p: Provider) -> NSImage? {
         if let c = cache[p] { return c }
-        guard let url = Bundle.module.url(forResource: p.logoResource, withExtension: "svg"),
-              let img = NSImage(contentsOf: url) else { return nil }
-        cache[p] = img
-        return img
+        for ext in ["svg", "png"] {
+            if let url = Bundle.module.url(forResource: p.logoResource, withExtension: ext),
+               let img = NSImage(contentsOf: url) {
+                cache[p] = img
+                return img
+            }
+        }
+        return nil
     }
 }
 
+/// Round white badge with the provider logo centered inside.
 struct ProviderLogoView: View {
     let provider: Provider
     var size: CGFloat = 20
     var body: some View {
-        if let logo = ProviderLogo.image(provider) {
-            Image(nsImage: logo).resizable().scaledToFit().frame(width: size, height: size)
-        } else {
-            Image(systemName: provider.fallbackSymbol)
-                .font(.system(size: size * 0.8))
-                .foregroundStyle(.secondary)
-                .frame(width: size, height: size)
+        ZStack {
+            Circle().fill(.white)
+            Group {
+                if let logo = ProviderLogo.image(provider) {
+                    Image(nsImage: logo).resizable().scaledToFit()
+                } else {
+                    Image(systemName: provider.fallbackSymbol)
+                        .font(.system(size: size * 0.5))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: size * 0.62, height: size * 0.62)
         }
+        .frame(width: size, height: size)
+        .overlay(Circle().strokeBorder(.black.opacity(0.06)))
     }
 }
 
@@ -52,7 +64,7 @@ struct ProviderSignIn: View {
             if hasCreds { model.signIn(provider) } else { model.openCredentialsFolder() }
         } label: {
             HStack(spacing: 10) {
-                ProviderLogoView(provider: provider, size: 20)
+                ProviderLogoView(provider: provider, size: 28)
                 Text(hasCreds ? "Sign in with \(provider.name)" : "Add \(provider.name) credentials…")
                     .fontWeight(.medium)
                 Spacer()
