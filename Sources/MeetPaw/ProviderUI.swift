@@ -74,7 +74,7 @@ struct ProviderSignIn: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 10).padding(.horizontal, 12)
-            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+            .glassCard(cornerRadius: 12)
         }
         .buttonStyle(.plain)
     }
