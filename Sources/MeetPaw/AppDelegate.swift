@@ -87,9 +87,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         walkTimer?.invalidate()
         walkPhase = 0
         let started = Date()
-        walkTimer = Timer.scheduledTimer(withTimeInterval: 0.13, repeats: true) { [weak self] timer in
+        walkTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] timer in
             guard let self, let button = self.statusItem.button else { timer.invalidate(); return }
-            self.walkPhase = (self.walkPhase + 1) % 4
+            self.walkPhase = (self.walkPhase + 1) % Self.walkFrames
             button.image = Self.walkFrame(phase: self.walkPhase)
             // Stop once generation finishes (but play at least ~0.6s).
             if !self.model.creatingLink && Date().timeIntervalSince(started) > 0.6 {
@@ -106,33 +106,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return img
     }
 
-    /// One frame of the two-paw walk: two paws side by side, one stepping up
-    /// (brighter) and one resting (dimmer), alternating by phase.
-    private static func walkFrame(phase: Int) -> NSImage {
-        let w: CGFloat = 26, h: CGFloat = 18
-        let cfg = NSImage.SymbolConfiguration(pointSize: 12, weight: .regular)
-        let paw = NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: nil)!
-            .withSymbolConfiguration(cfg)!
+    static let walkFrames = 10
 
-        // Per-phase (left, right) → (vertical lift, opacity).
-        let steps: [((CGFloat, CGFloat), (CGFloat, CGFloat))] = [
-            ((2, 1.0), (0, 0.45)),   // left steps
-            ((0, 0.8), (0, 0.8)),    // both mid
-            ((0, 0.45), (2, 1.0)),   // right steps
-            ((0, 0.8), (0, 0.8)),    // both mid
-        ]
-        let (left, right) = steps[phase]
+    /// One frame of a forward-marching paw trail: three prints move left→right,
+    /// each growing and brightening mid-stride then shrinking/fading, zig-zagging
+    /// up and down with alternating tilt — like real footprints.
+    private static func walkFrame(phase: Int) -> NSImage {
+        let w: CGFloat = 30, h: CGFloat = 18
+        let prints = 3
+        let t = CGFloat(phase) / CGFloat(walkFrames)
 
         let img = NSImage(size: NSSize(width: w, height: h))
         img.lockFocus()
-        func place(cx: CGFloat, lift: CGFloat, alpha: CGFloat) {
+        for i in 0..<prints {
+            // Progress of this print across the width (staggered + looping).
+            let p = (t + CGFloat(i) / CGFloat(prints)).truncatingRemainder(dividingBy: 1)
+            let bell = sin(.pi * p)               // 0 at edges, 1 mid-stride
+            let x = 3 + p * (w - 6)
+            let lift = (i % 2 == 0 ? 1 : -1) * 3 * bell   // alternating up/down gait
+            let tilt: CGFloat = (i % 2 == 0 ? -16 : 16)
+            let size = 8 + 7 * bell               // smaller at edges, bigger mid
+            let alpha = 0.2 + 0.8 * bell
+
+            let cfg = NSImage.SymbolConfiguration(pointSize: size, weight: .regular)
+            guard let paw = NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: nil)?
+                .withSymbolConfiguration(cfg) else { continue }
+
+            NSGraphicsContext.saveGraphicsState()
+            let xf = NSAffineTransform()
+            xf.translateX(by: x, yBy: h / 2 + lift)
+            xf.rotate(byDegrees: tilt)
+            xf.concat()
             let s = paw.size
-            let r = NSRect(x: cx - s.width / 2, y: (h - s.height) / 2 + lift,
-                           width: s.width, height: s.height)
-            paw.draw(in: r, from: .zero, operation: .sourceOver, fraction: alpha)
+            paw.draw(in: NSRect(x: -s.width / 2, y: -s.height / 2, width: s.width, height: s.height),
+                     from: .zero, operation: .sourceOver, fraction: alpha)
+            NSGraphicsContext.restoreGraphicsState()
         }
-        place(cx: 8, lift: left.0, alpha: left.1)
-        place(cx: 18, lift: right.0, alpha: right.1)
         img.unlockFocus()
         img.isTemplate = true
         return img
