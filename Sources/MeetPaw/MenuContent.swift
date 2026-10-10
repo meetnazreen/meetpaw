@@ -115,21 +115,37 @@ struct MenuContent: View {
             .disabled(model.creatingLink)
             .padding(.horizontal, 12).padding(.top, 12)
 
-            Button { withAnimation(.easeInOut) { showSchedule.toggle() } } label: {
+            Button { showSchedule.toggle() } label: {
                 Label("Schedule meeting", systemImage: "calendar.badge.plus")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.bordered).tint(.secondary)
             .padding(.horizontal, 12).padding(.vertical, 8)
 
-            if showSchedule {
-                ScheduleForm(model: model) { withAnimation(.easeInOut) { showSchedule = false } }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            } else if model.meetings.isEmpty {
-                Text("No upcoming meetings in the next 24 hours.")
-                    .font(.callout).foregroundStyle(.secondary)
-                    .padding(.horizontal, 12).padding(.bottom, 12)
-            } else {
+            ZStack(alignment: .top) {
+                if showSchedule {
+                    ScheduleForm(model: model) { showSchedule = false }
+                        // Form drops in from the top.
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                } else {
+                    upcoming
+                        // List is pushed down and out, and springs back up.
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .clipped()
+        }
+        .animation(.spring(response: 0.38, dampingFraction: 0.86), value: showSchedule)
+    }
+
+    @ViewBuilder
+    private var upcoming: some View {
+        if model.meetings.isEmpty {
+            Text("No upcoming meetings in the next 24 hours.")
+                .font(.callout).foregroundStyle(.secondary)
+                .padding(.horizontal, 12).padding(.bottom, 12)
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
                 Text("UPCOMING").font(.caption2).foregroundStyle(.secondary)
                     .padding(.horizontal, 12)
                 ScrollView {
@@ -142,7 +158,6 @@ struct MenuContent: View {
                 .frame(maxHeight: 280)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: showSchedule)
     }
 
     // MARK: Helpers
