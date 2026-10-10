@@ -122,25 +122,26 @@ struct ScheduleForm: View {
         .padding(.horizontal, 12).padding(.bottom, 12)
     }
 
+    private var accountLabel: String {
+        guard let a = account else { return "Select account" }
+        return "\(a.provider.name) · \(a.email)"
+    }
+
     @ViewBuilder
     private var accountField: some View {
-        if isEditing, let a = account {
+        if isEditing {
             // Account is fixed when editing an existing event.
-            HStack(spacing: 8) {
-                ProviderLogoView(provider: a.provider, size: 18)
-                Text(a.email).lineLimit(1)
-                Spacer(minLength: 0)
-            }
-            .glassField()
+            HStack { Text(accountLabel).lineLimit(1); Spacer(minLength: 0) }
+                .foregroundStyle(.secondary)
+                .glassField()
         } else {
             Menu {
                 ForEach(model.accounts) { a in
                     Button { account = a } label: { Text("\(a.provider.name) · \(a.email)") }
                 }
             } label: {
-                HStack(spacing: 8) {
-                    if let a = account { ProviderLogoView(provider: a.provider, size: 18) }
-                    Text(account?.email ?? "Select account").lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(accountLabel).lineLimit(1)
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.up.chevron.down").font(.caption2).foregroundStyle(.secondary)
                 }
