@@ -141,6 +141,21 @@ final class AppModel {
         }
     }
 
+    /// Updates an existing event; returns true on success.
+    func updateMeeting(event: CalendarEvent, title: String, start: Date,
+                       durationMinutes: Int, attendees: [String], addMeet: Bool) async -> Bool {
+        do {
+            let end = start.addingTimeInterval(TimeInterval(durationMinutes * 60))
+            try await api.updateEvent(id: event.id, title: title, start: start, end: end,
+                                      attendees: attendees, addMeet: addMeet, hasMeet: event.hasMeet)
+            await refresh()
+            return true
+        } catch {
+            state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            return false
+        }
+    }
+
     func copyLink() {
         guard let url = createdLink else { return }
         NSPasteboard.general.clearContents()

@@ -114,6 +114,37 @@ struct GoogleAPI {
         }
     }
 
+    /// Updates an existing event (PATCH). Adds a Meet link only if asked and
+    /// the event doesn't already have one.
+    func updateEvent(id: String, title: String, start: Date, end: Date,
+                     attendees: [String], addMeet: Bool, hasMeet: Bool) async throws {
+        let token = try await auth.accessToken()
+        let fmt = ISO8601DateFormatter()
+        var body: [String: Any] = [
+            "summary": title,
+            "start": ["dateTime": fmt.string(from: start)],
+            "end": ["dateTime": fmt.string(from: end)],
+            "attendees": attendees.map { ["email": $0] },
+        ]
+        if addMeet && !hasMeet {
+            body["conferenceData"] = ["createRequest": [
+                "requestId": UUID().uuidString,
+                "conferenceSolutionKey": ["type": "hangoutsMeet"],
+            ]]
+        }
+        let enc = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        var req = URLRequest(url: URL(string: "https://www.googleapis.com/calendar/v3/calendars/primary/events/\(enc)?conferenceDataVersion=1&sendUpdates=all")!)
+        req.httpMethod = "PATCH"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard let http = resp as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw AuthError.server(String(data: data, encoding: .utf8) ?? "Could not update event.")
+        }
+    }
+
     /// Deletes an event from the user's primary calendar.
     func deleteEvent(id: String) async throws {
         let token = try await auth.accessToken()

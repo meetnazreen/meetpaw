@@ -2,18 +2,37 @@ import SwiftUI
 
 struct ScheduleForm: View {
     @Bindable var model: AppModel
+    var event: CalendarEvent?            // non-nil → edit mode
     let onDone: () -> Void
 
-    @State private var title = ""
-    @State private var start = defaultStart()
-    @State private var durationMinutes = 30
-    @State private var addMeet = true
-    @State private var emails: [String] = []
+    @State private var title: String
+    @State private var start: Date
+    @State private var durationMinutes: Int
+    @State private var addMeet: Bool
+    @State private var emails: [String]
     @State private var emailDraft = ""
     @State private var emailInvalid = false
     @State private var submitting = false
 
     private let durations = [15, 30, 45, 60]
+
+    init(model: AppModel, event: CalendarEvent? = nil, onDone: @escaping () -> Void) {
+        self._model = Bindable(wrappedValue: model)
+        self.event = event
+        self.onDone = onDone
+        _title = State(initialValue: event?.summary ?? "")
+        _start = State(initialValue: event?.startDate ?? Self.defaultStart())
+        _addMeet = State(initialValue: event?.hasMeet ?? true)
+        _emails = State(initialValue: event?.attendeeEmails ?? [])
+        var dur = 30
+        if let s = event?.startDate, let e = event?.endDate {
+            let m = Int(e.timeIntervalSince(s) / 60)
+            dur = [15, 30, 45, 60].contains(m) ? m : 30
+        }
+        _durationMinutes = State(initialValue: dur)
+    }
+
+    private var isEditing: Bool { event != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -78,7 +97,7 @@ struct ScheduleForm: View {
                     .buttonStyle(.plain).foregroundStyle(.secondary)
                 Button(action: submit) {
                     if submitting { ProgressView().controlSize(.small) }
-                    else { Text("Schedule") }
+                    else { Text(isEditing ? "Update" : "Schedule") }
                 }
                 .buttonStyle(.borderedProminent).tint(.meetpaw)
                 .disabled(title.isEmpty || submitting)
@@ -117,9 +136,16 @@ struct ScheduleForm: View {
         guard !emailInvalid else { return }
         submitting = true
         Task {
-            let ok = await model.scheduleMeeting(title: title, start: start,
-                                                  durationMinutes: durationMinutes,
-                                                  attendees: emails, addMeet: addMeet)
+            let ok: Bool
+            if let event {
+                ok = await model.updateMeeting(event: event, title: title, start: start,
+                                               durationMinutes: durationMinutes,
+                                               attendees: emails, addMeet: addMeet)
+            } else {
+                ok = await model.scheduleMeeting(title: title, start: start,
+                                                 durationMinutes: durationMinutes,
+                                                 attendees: emails, addMeet: addMeet)
+            }
             submitting = false
             if ok { onDone() }
         }

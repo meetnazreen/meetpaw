@@ -39,6 +39,16 @@ struct CalendarEvent: Codable, Identifiable {
         return parseRFC3339(dt)
     }
 
+    var endDate: Date? {
+        guard let dt = end?.dateTime else { return nil }
+        return parseRFC3339(dt)
+    }
+
+    /// Guest emails (excluding yourself), for prefilling the edit form.
+    var attendeeEmails: [String] {
+        (attendees ?? []).compactMap { $0.`self` == true ? nil : $0.email }
+    }
+
     var isDeclinedByMe: Bool {
         attendees?.contains { $0.`self` == true && $0.responseStatus == "declined" } ?? false
     }
@@ -59,6 +69,7 @@ struct EntryPoint: Codable {
 }
 
 struct Attendee: Codable {
+    let email: String?
     let `self`: Bool?
     let responseStatus: String?
 }

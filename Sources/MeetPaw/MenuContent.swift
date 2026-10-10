@@ -6,6 +6,7 @@ struct MenuContent: View {
     @State private var showSchedule = false
     @State private var scheduleSession = 0   // bump to reset the form each open
     @State private var showInstant = false   // drawer instant-meeting widget
+    @State private var editingEvent: CalendarEvent?   // non-nil → editing
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -136,20 +137,21 @@ struct MenuContent: View {
             .padding(.horizontal, 12).padding(.vertical, 8)
 
             ZStack(alignment: .top) {
-                if showSchedule {
-                    ScheduleForm(model: model) { showSchedule = false }
-                        .id(scheduleSession)   // new identity each open → reset state
-                        // Form drops in from the top.
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                if showSchedule || editingEvent != nil {
+                    ScheduleForm(model: model, event: editingEvent) {
+                        showSchedule = false; editingEvent = nil
+                    }
+                    .id(scheduleSession)   // new identity each open → reset state
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 } else {
                     upcoming
-                        // List is pushed down and out, and springs back up.
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
             .clipped()
         }
         .animation(.spring(response: 0.38, dampingFraction: 0.86), value: showSchedule)
+        .animation(.spring(response: 0.38, dampingFraction: 0.86), value: editingEvent?.id)
     }
 
     @ViewBuilder
@@ -166,7 +168,9 @@ struct MenuContent: View {
                     VStack(spacing: 0) {
                         ForEach(model.meetings) { event in
                             SwipeToDelete(onDelete: { model.deleteEvent(event) }) {
-                                MeetingRow(event: event) { model.join(event) }
+                                MeetingRow(event: event,
+                                           join: { model.join(event) },
+                                           edit: { scheduleSession += 1; editingEvent = event })
                             }
                         }
                     }
@@ -194,6 +198,7 @@ struct MenuContent: View {
 struct MeetingRow: View {
     let event: CalendarEvent
     let join: () -> Void
+    let edit: () -> Void
     @State private var hovering = false
 
     var body: some View {
@@ -207,8 +212,15 @@ struct MeetingRow: View {
                 Text(timeLabel).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
+            Button(action: edit) {
+                Image(systemName: "pencil")
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help("Edit")
             Button(action: join) {
                 Text(event.hasMeet ? "Join" : "Open")
+                    .frame(width: 42)
             }
             .buttonStyle(.bordered)
             .tint(event.hasMeet ? .meetpaw : .secondary)
