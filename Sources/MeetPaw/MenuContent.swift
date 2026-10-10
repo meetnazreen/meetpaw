@@ -9,7 +9,6 @@ struct MenuContent: View {
     @State private var editingEvent: AccountEvent?    // non-nil → editing
     @State private var showAddAccount = false
     @State private var showAccountSwitcher = false
-    @State private var showSettings = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -19,10 +18,6 @@ struct MenuContent: View {
                 addAccountScreen
             } else if showAccountSwitcher {
                 AccountSwitcher(model: model) { showAccountSwitcher = false }
-            } else if showSettings {
-                SettingsPanel(model: model,
-                              addAccount: { showAddAccount = true },
-                              onClose: { showSettings = false })
             } else {
                 body(for: model.state)
             }
@@ -83,14 +78,66 @@ struct MenuContent: View {
         return a.shortEmail
     }
 
+    private func shortcutText(_ p: Provider) -> String {
+        switch p {        // ⌘ first
+        case .google: return "⌘⇧M"
+        case .zoom: return "⌘⇧Z"
+        case .microsoft: return "⌘⇧T"
+        }
+    }
+
     private var hamburger: some View {
-        Button {
-            showAccountSwitcher = false
-            showSettings.toggle()
+        Menu {
+            Button { showAccountSwitcher = false; showAddAccount = true } label: {
+                Label("Add account…", systemImage: "plus.circle.fill")
+            }
+            .tint(.meetpaw)
+            if model.isSignedIn {
+                Button { Task { await model.refresh() } } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+            }
+
+            if !model.accounts.isEmpty {
+                Section("Accounts") {
+                    ForEach(model.accounts) { a in
+                        Button(role: .destructive) { model.signOut(a) } label: {
+                            Label("\(a.email) — Sign out",
+                                  systemImage: "rectangle.portrait.and.arrow.right")
+                        }
+                    }
+                }
+            }
+
+            if model.signedProviders.count > 1 {
+                Picker(selection: Binding(
+                    get: { model.defaultProvider },
+                    set: { model.setDefaultProvider($0) })) {
+                    ForEach(model.signedProviders) { p in
+                        Label { Text("\(p.name)   \(shortcutText(p))") }
+                            icon: { ProviderLogo.menuIcon(p) }.tag(p)
+                    }
+                } label: {
+                    Text("Default meeting provider")
+                }
+                .pickerStyle(.inline)
+            }
+
+            Section("Settings") {
+                Toggle(isOn: $model.launchAtLogin) {
+                    Label("Launch at login", systemImage: "power")
+                }
+                Button { NSApp.terminate(nil) } label: {
+                    Label("Quit MeetPaw", systemImage: "xmark.circle")
+                }
+            }
         } label: {
             Image(systemName: "line.3.horizontal").foregroundStyle(.secondary)
         }
+        .menuStyle(.borderlessButton)
         .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
         .help("Menu")
     }
 
