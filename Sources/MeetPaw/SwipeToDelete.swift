@@ -1,8 +1,8 @@
 import SwiftUI
 import AppKit
 
-/// Swipe a row right-to-left to reveal a red Delete button (macOS has no
-/// native swipeActions). Fires haptic feedback on reveal and on delete.
+/// Swipe a row right-to-left (trackpad two-finger swipe) to reveal a red Delete
+/// button. Vertical scrolls pass through to the list. Haptics on reveal/delete.
 struct SwipeToDelete<Content: View>: View {
     let onDelete: () -> Void
     @ViewBuilder var content: Content
@@ -16,7 +16,17 @@ struct SwipeToDelete<Content: View>: View {
         GeometryReader { geo in
             let w = geo.size.width
             HStack(spacing: 0) {
-                content.frame(width: w, height: rowHeight)
+                SwipeCatcher(onScroll: handle) {
+                    content
+                        .frame(width: w, height: rowHeight)
+                        // Right-click fallback for a regular mouse (no swipe).
+                        .contextMenu {
+                            Button(role: .destructive, action: onDelete) {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                }
+                .frame(width: w, height: rowHeight)
                 Button(action: performDelete) {
                     Image(systemName: "trash.fill")
                         .foregroundStyle(.white)
@@ -26,26 +36,20 @@ struct SwipeToDelete<Content: View>: View {
                 .buttonStyle(.plain)
             }
             .offset(x: offset)
-            .gesture(
-                DragGesture(minimumDistance: 12)
-                    .onChanged { value in
-                        let t = min(0, max(-deleteWidth, value.translation.width))
-                        offset = t
-                        if t <= -deleteWidth * 0.6, hapticArmed {   // crossed open threshold
-                            haptic(); hapticArmed = false
-                        } else if t > -deleteWidth * 0.6 {
-                            hapticArmed = true
-                        }
-                    }
-                    .onEnded { value in
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            offset = value.translation.width <= -deleteWidth * 0.5 ? -deleteWidth : 0
-                        }
-                    }
-            )
         }
         .frame(height: rowHeight)
         .clipped()
+    }
+
+    private func handle(_ delta: CGFloat, _ ended: Bool) {
+        offset = min(0, max(-deleteWidth, offset + delta))
+        if offset <= -deleteWidth * 0.6, hapticArmed { haptic(); hapticArmed = false }
+        else if offset > -deleteWidth * 0.6 { hapticArmed = true }
+        if ended {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                offset = offset <= -deleteWidth * 0.5 ? -deleteWidth : 0
+            }
+        }
     }
 
     private func performDelete() {
@@ -56,5 +60,53 @@ struct SwipeToDelete<Content: View>: View {
 
     private func haptic() {
         NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
+    }
+}
+
+/// Hosts SwiftUI content in an NSView that reports horizontal trackpad swipes
+/// and lets vertical scrolls bubble to the enclosing list.
+private struct SwipeCatcher<Content: View>: NSViewRepresentable {
+    let onScroll: (CGFloat, Bool) -> Void
+    let content: AnyView
+
+    init(onScroll: @escaping (CGFloat, Bool) -> Void, @ViewBuilder content: () -> Content) {
+        self.onScroll = onScroll
+        self.content = AnyView(content())
+    }
+
+    func makeNSView(context: Context) -> ScrollNSView {
+        let v = ScrollNSView()
+        v.onScroll = onScroll
+        let host = NSHostingView(rootView: content)
+        host.translatesAutoresizingMaskIntoConstraints = false
+        v.addSubview(host)
+        v.host = host
+        NSLayoutConstraint.activate([
+            host.leadingAnchor.constraint(equalTo: v.leadingAnchor),
+            host.trailingAnchor.constraint(equalTo: v.trailingAnchor),
+            host.topAnchor.constraint(equalTo: v.topAnchor),
+            host.bottomAnchor.constraint(equalTo: v.bottomAnchor),
+        ])
+        return v
+    }
+
+    func updateNSView(_ v: ScrollNSView, context: Context) {
+        v.onScroll = onScroll
+        v.host?.rootView = content
+    }
+
+    final class ScrollNSView: NSView {
+        var onScroll: ((CGFloat, Bool) -> Void)?
+        var host: NSHostingView<AnyView>?
+
+        override func scrollWheel(with e: NSEvent) {
+            // Horizontal-dominant → swipe; otherwise let the list scroll.
+            if abs(e.scrollingDeltaX) > abs(e.scrollingDeltaY) + 0.1 {
+                let ended = e.phase == .ended || e.phase == .cancelled || e.momentumPhase == .ended
+                onScroll?(e.scrollingDeltaX, ended)
+            } else {
+                super.scrollWheel(with: e)
+            }
+        }
     }
 }
