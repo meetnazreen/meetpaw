@@ -41,53 +41,38 @@ struct ProviderLogoView: View {
     }
 }
 
-/// Account switcher: avatar + email, platform below. "All accounts" + each one.
+/// Simple account list: small avatar + email. "All accounts" + each one.
 struct AccountSwitcher: View {
     @Bindable var model: AppModel
     let onSelect: () -> Void
 
     var body: some View {
-        VStack(spacing: 6) {
-            allRow
+        VStack(spacing: 0) {
+            row(id: nil, title: "All accounts", avatar: nil)
             ForEach(model.accounts) { account in
-                row(id: account.id,
-                    avatar: AnyView(ProviderLogoView(provider: account.provider, size: 34)),
-                    title: account.email, subtitle: account.provider.name)
+                row(id: account.id, title: account.email,
+                    avatar: AnyView(ProviderLogoView(provider: account.provider, size: 20)))
             }
         }
-        .padding(12)
-    }
-
-    private var allRow: some View {
-        row(id: nil,
-            avatar: AnyView(
-                ZStack {
-                    Circle().fill(.white)
-                    Image(systemName: "person.2.fill").font(.system(size: 15)).foregroundStyle(.secondary)
-                }.frame(width: 34, height: 34).overlay(Circle().strokeBorder(.black.opacity(0.06)))),
-            title: "All accounts",
-            subtitle: "\(model.accounts.count) account\(model.accounts.count == 1 ? "" : "s")")
+        .padding(.vertical, 6)
     }
 
     @ViewBuilder
-    private func row(id: String?, avatar: AnyView, title: String, subtitle: String) -> some View {
+    private func row(id: String?, title: String, avatar: AnyView?) -> some View {
         let selected = model.selectedAccountID == id
         Button {
             model.selectedAccountID = id
             onSelect()
         } label: {
-            HStack(spacing: 10) {
-                avatar
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title).fontWeight(.medium).lineLimit(1)
-                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
-                }
+            HStack(spacing: 8) {
+                if let avatar { avatar } else { Color.clear.frame(width: 20, height: 20) }
+                Text(title).lineLimit(1)
                 Spacer()
-                if selected { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                if selected { Image(systemName: "checkmark").font(.caption).foregroundStyle(.tint) }
             }
-            .padding(.vertical, 8).padding(.horizontal, 12)
+            .padding(.vertical, 6).padding(.horizontal, 14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassCard(cornerRadius: 12)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
