@@ -16,6 +16,16 @@ struct CalendarEvent: Codable, Identifiable {
     let conferenceData: ConferenceData?
     let attendees: [Attendee]?
 
+    /// Build an event from an external provider (Zoom/Teams) meeting.
+    static func external(id: String, title: String, start: Date, end: Date?, joinURL: String) -> CalendarEvent {
+        let f = ISO8601DateFormatter()
+        return CalendarEvent(
+            id: id, summary: title,
+            start: EventDateTime(dateTime: f.string(from: start), date: nil),
+            end: end.map { EventDateTime(dateTime: f.string(from: $0), date: nil) },
+            hangoutLink: joinURL, htmlLink: joinURL, conferenceData: nil, attendees: nil)
+    }
+
     /// The Meet URL, if this event has one.
     var meetURL: URL? {
         if let ep = conferenceData?.entryPoints?.first(where: { $0.entryPointType == "video" }),

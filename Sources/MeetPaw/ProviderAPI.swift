@@ -53,6 +53,56 @@ struct ProviderAPI {
         return url
     }
 
+    // MARK: Upcoming meetings (Phase 2)
+
+    func upcomingMeetings() async throws -> [CalendarEvent] {
+        switch auth.provider {
+        case .zoom: return try await zoomUpcoming()
+        case .microsoft: return try await teamsUpcoming()
+        case .google: return []
+        }
+    }
+
+    private func zoomUpcoming() async throws -> [CalendarEvent] {
+        let token = try await auth.accessToken()
+        var req = URLRequest(url: URL(string: "https://api.zoom.us/v2/users/me/meetings?type=upcoming&page_size=30")!)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try Self.check(resp, data)
+        let list = try JSONDecoder().decode(ZoomMeetingList.self, from: data)
+        let cutoff = Date().addingTimeInterval(24 * 3600)
+        return (list.meetings ?? []).compactMap { m in
+            guard let s = m.start_time, let start = parseRFC3339(s), start < cutoff,
+                  let join = m.join_url else { return nil }
+            return CalendarEvent.external(id: "zoom-\(m.id ?? 0)", title: m.topic ?? "Zoom meeting",
+                start: start, end: start.addingTimeInterval(TimeInterval((m.duration ?? 30) * 60)), joinURL: join)
+        }
+    }
+
+    private func teamsUpcoming() async throws -> [CalendarEvent] {
+        let token = try await auth.accessToken()
+        let f = ISO8601DateFormatter()
+        let start = f.string(from: Date())
+        let end = f.string(from: Date().addingTimeInterval(24 * 3600))
+        let url = "https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=\(start)&endDateTime=\(end)&$orderby=start/dateTime&$top=30"
+        var req = URLRequest(url: URL(string: url)!)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("outlook.timezone=\"UTC\"", forHTTPHeaderField: "Prefer")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try Self.check(resp, data)
+        let list = try JSONDecoder().decode(GraphEvents.self, from: data)
+        let gf = DateFormatter()
+        gf.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS"
+        gf.timeZone = TimeZone(identifier: "UTC")
+        return (list.value ?? []).compactMap { e in
+            guard let dt = e.start?.dateTime, let when = gf.date(from: dt) else { return nil }
+            let join = e.onlineMeeting?.joinUrl ?? e.webLink
+            guard let join else { return nil }
+            return CalendarEvent.external(id: "teams-\(e.id ?? UUID().uuidString)",
+                title: e.subject ?? "Teams meeting", start: when, end: nil, joinURL: join)
+        }
+    }
+
     // MARK: Scheduled meetings
 
     func createScheduled(title: String, start: Date, durationMinutes: Int, attendees: [String]) async throws {
@@ -123,3 +173,27 @@ struct ZoomMeeting: Codable {
 struct TeamsMeeting: Codable {
     let joinWebUrl: String?
 }
+
+struct ZoomMeetingList: Codable {
+    let meetings: [ZoomListItem]?
+}
+struct ZoomListItem: Codable {
+    let id: Int?
+    let topic: String?
+    let start_time: String?
+    let duration: Int?
+    let join_url: String?
+}
+
+struct GraphEvents: Codable {
+    let value: [GraphEvent]?
+}
+struct GraphEvent: Codable {
+    let id: String?
+    let subject: String?
+    let webLink: String?
+    let start: GraphDateTime?
+    let onlineMeeting: GraphOnlineMeeting?
+}
+struct GraphDateTime: Codable { let dateTime: String? }
+struct GraphOnlineMeeting: Codable { let joinUrl: String? }

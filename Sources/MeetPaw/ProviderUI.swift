@@ -157,22 +157,25 @@ struct ProviderSignIn: View {
     @ViewBuilder
     private func row(_ provider: Provider) -> some View {
         let hasCreds = model.hasCredentials(provider)
+        let atCap = hasCreds && !model.canAddAccount(provider)
         Button {
             if hasCreds { model.addAccount(provider) } else { model.openCredentialsFolder() }
         } label: {
             HStack(spacing: 10) {
                 ProviderLogoView(provider: provider, size: 28, resource: provider.signInLogoResource)
-                Text(hasCreds ? "Sign in with \(provider.signInName)" : "Add \(provider.signInName) credentials…")
+                Text(atCap ? "\(provider.signInName) — max \(AppModel.maxAccountsPerProvider) accounts"
+                     : hasCreds ? "Sign in with \(provider.signInName)"
+                     : "Add \(provider.signInName) credentials…")
                     .fontWeight(.medium)
                 Spacer()
-                if !hasCreds {
-                    Image(systemName: "folder").foregroundStyle(.secondary)
-                }
+                if !hasCreds { Image(systemName: "folder").foregroundStyle(.secondary) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 10).padding(.horizontal, 12)
             .glassCard(cornerRadius: 12)
         }
         .buttonStyle(.plain)
+        .disabled(atCap)
+        .opacity(atCap ? 0.5 : 1)
     }
 }

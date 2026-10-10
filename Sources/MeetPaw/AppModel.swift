@@ -100,8 +100,18 @@ final class AppModel {
         startTimer()
     }
 
+    static let maxAccountsPerProvider = 5
+
+    func canAddAccount(_ provider: Provider) -> Bool {
+        accounts.filter { $0.provider == provider }.count < Self.maxAccountsPerProvider
+    }
+
     func addAccount(_ provider: Provider) {
         guard !signingIn else { return }
+        guard canAddAccount(provider) else {
+            state = .error("Up to \(Self.maxAccountsPerProvider) \(provider.name) accounts.")
+            return
+        }
         Task {
             signingIn = true
             defer { signingIn = false }
@@ -140,23 +150,23 @@ final class AppModel {
     // MARK: Events (Google calendars for now; Zoom/Teams lists later)
 
     func refresh() async {
-        let googleAccounts = accounts.filter { $0.provider == .google }
-        guard !googleAccounts.isEmpty else {
-            meetings = []
-            state = accounts.isEmpty ? .signedOut : .ready
-            return
-        }
+        guard !accounts.isEmpty else { meetings = []; state = .signedOut; return }
         if case .ready = state {} else { state = .loading }
 
-        let pairs = googleAccounts.compactMap { a in clients[a.id].map { (a, $0) } }
+        let pairs = accounts.compactMap { a in clients[a.id].map { (a, $0) } }
         var all: [AccountEvent] = []
         await withTaskGroup(of: [AccountEvent].self) { group in
             for (account, client) in pairs {
                 group.addTask {
                     do {
-                        let events = try await GoogleAPI(auth: client).upcomingMeetings()
+                        let events: [CalendarEvent]
+                        if account.provider == .google {
+                            events = try await GoogleAPI(auth: client).upcomingMeetings()
+                        } else {
+                            events = try await ProviderAPI(auth: client).upcomingMeetings()
+                        }
                         return events.map { AccountEvent(account: account, event: $0) }
-                    } catch { return [] }   // one account failing must not drop others
+                    } catch { return [] }   // one account/provider failing must not drop others
                 }
             }
             for await part in group { all += part }
