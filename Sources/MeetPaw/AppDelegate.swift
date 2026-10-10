@@ -87,7 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         walkTimer?.invalidate()
         walkPhase = 0
         let started = Date()
-        walkTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] timer in
+        walkTimer = Timer.scheduledTimer(withTimeInterval: 0.07, repeats: true) { [weak self] timer in
             guard let self, let button = self.statusItem.button else { timer.invalidate(); return }
             self.walkPhase = (self.walkPhase + 1) % Self.walkFrames
             button.image = Self.walkFrame(phase: self.walkPhase)
@@ -106,41 +106,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return img
     }
 
-    static let walkFrames = 10
+    static let walkFrames = 12
 
-    /// One frame of a forward-marching paw trail: three prints move left→right,
-    /// each growing and brightening mid-stride then shrinking/fading, zig-zagging
-    /// up and down with alternating tilt — like real footprints.
+    /// One frame: two paws (left & right foot) rising upward through the icon
+    /// and fading, staggered half a cycle apart so one is up while the other
+    /// is down — a walking-up loop. No tilt.
     private static func walkFrame(phase: Int) -> NSImage {
-        let w: CGFloat = 30, h: CGFloat = 18
-        let prints = 3
+        let w: CGFloat = 24, h: CGFloat = 18
         let t = CGFloat(phase) / CGFloat(walkFrames)
 
         let img = NSImage(size: NSSize(width: w, height: h))
         img.lockFocus()
-        for i in 0..<prints {
-            // Progress of this print across the width (staggered + looping).
-            let p = (t + CGFloat(i) / CGFloat(prints)).truncatingRemainder(dividingBy: 1)
-            let bell = sin(.pi * p)               // 0 at edges, 1 mid-stride
-            let x = 3 + p * (w - 6)
-            let lift = (i % 2 == 0 ? 1 : -1) * 3 * bell   // alternating up/down gait
-            let tilt: CGFloat = (i % 2 == 0 ? -16 : 16)
-            let size = 8 + 7 * bell               // smaller at edges, bigger mid
-            let alpha = 0.2 + 0.8 * bell
+        for i in 0..<2 {
+            let p = (t + CGFloat(i) * 0.5).truncatingRemainder(dividingBy: 1) // 0 bottom → 1 top
+            let x: CGFloat = (i == 0) ? 8 : 16
+            let y = p * h
+            let alpha = sin(.pi * p)              // fade in low, fade out high
+            let size = 10 + 2 * sin(.pi * p)
 
             let cfg = NSImage.SymbolConfiguration(pointSize: size, weight: .regular)
             guard let paw = NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: nil)?
                 .withSymbolConfiguration(cfg) else { continue }
-
-            NSGraphicsContext.saveGraphicsState()
-            let xf = NSAffineTransform()
-            xf.translateX(by: x, yBy: h / 2 + lift)
-            xf.rotate(byDegrees: tilt)
-            xf.concat()
             let s = paw.size
-            paw.draw(in: NSRect(x: -s.width / 2, y: -s.height / 2, width: s.width, height: s.height),
+            paw.draw(in: NSRect(x: x - s.width / 2, y: y - s.height / 2, width: s.width, height: s.height),
                      from: .zero, operation: .sourceOver, fraction: alpha)
-            NSGraphicsContext.restoreGraphicsState()
         }
         img.unlockFocus()
         img.isTemplate = true
