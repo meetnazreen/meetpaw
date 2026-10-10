@@ -75,7 +75,8 @@ enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
             return OAuthConfig(
                 authURL: "https://zoom.us/oauth/authorize",
                 tokenURL: "https://zoom.us/oauth/token",
-                scopes: ["meeting:write:meeting", "meeting:read:list_meetings", "user:read:user"],
+                scopes: ["meeting:write:meeting", "meeting:read:list_meetings",
+                         "meeting:delete:meeting", "user:read:user"],
                 redirectHost: "127.0.0.1", fixedPort: 8765, usePKCE: true,
                 clientAuth: .basicHeader, sendScopeOnToken: false,
                 extraAuthParams: [:],
