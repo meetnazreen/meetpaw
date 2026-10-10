@@ -8,6 +8,7 @@ let package = Package(
         .executableTarget(
             name: "MeetPaw",
             path: "Sources/MeetPaw",
+            resources: [.process("Resources")],
             // ponytail: Swift 5 language mode — not worth fighting Swift 6 strict
             // concurrency for a small menu-bar app. Bump to .v6 later if desired.
             swiftSettings: [.swiftLanguageMode(.v5)]

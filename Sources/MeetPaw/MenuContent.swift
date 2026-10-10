@@ -201,9 +201,7 @@ struct GlassLinkCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Image(systemName: "video.fill")
-                    .font(.title3)
-                    .foregroundStyle(.tint)
+                MeetLogo.image.map { Image(nsImage: $0).resizable().scaledToFit().frame(height: 18) }
                 Text("New meeting ready")
                     .font(.subheadline).fontWeight(.semibold)
                 Spacer()
@@ -222,6 +220,8 @@ struct GlassLinkCard: View {
                 Button(action: join) {
                     Label("Join", systemImage: "arrow.up.forward.app")
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.meetpaw)
                 Button {
                     copy()
                     copied = true
@@ -230,6 +230,8 @@ struct GlassLinkCard: View {
                     Label(copied ? "Copied!" : "Copy link",
                           systemImage: copied ? "checkmark" : "doc.on.doc")
                 }
+                .buttonStyle(.bordered)
+                .tint(.secondary)
                 Spacer()
             }
             .controlSize(.small)
@@ -243,6 +245,14 @@ struct GlassLinkCard: View {
 extension Color {
     /// App accent: oklch(64.6% .222 41.116) ≈ #EA580C
     static let meetpaw = Color(red: 0.918, green: 0.345, blue: 0.047)
+}
+
+/// The Google Meet logo, loaded once from the bundled SVG (NSImage renders SVG).
+enum MeetLogo {
+    static let image: NSImage? = {
+        guard let url = Bundle.module.url(forResource: "meet", withExtension: "svg") else { return nil }
+        return NSImage(contentsOf: url)
+    }()
 }
 
 extension View {

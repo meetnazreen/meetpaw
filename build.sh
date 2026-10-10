@@ -21,6 +21,11 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/MeetPaw"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
+# SPM resource bundle (meet.svg etc.) must sit next to the executable so
+# Bundle.module can find it inside the .app.
+BINDIR=$(dirname "$BIN")
+cp -R "$BINDIR"/*.bundle "$APP/Contents/MacOS/" 2>/dev/null || true
+
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

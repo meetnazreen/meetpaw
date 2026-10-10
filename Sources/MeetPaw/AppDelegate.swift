@@ -49,9 +49,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        // Left-click signed in → paw step + instant meeting in the compact widget.
+        // Left-click signed in → paw-walk animation + instant meeting widget.
         drawerPopover.performClose(nil)
-        animatePaw()
+        showPawSteps()
         model.newInstantMeeting()
         show(linkPopover)
     }
@@ -70,29 +70,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentViewController?.view.window?.makeKey()
     }
 
-    // MARK: Paw-step animation
+    // MARK: Paw-walk overlay
 
-    /// A quick two-step "paw walk": two little hops with a tilt each.
-    /// Additive animations only — they revert to identity, so the icon never
-    /// gets stuck off-screen (and we never touch anchorPoint).
-    private func animatePaw() {
-        guard let layer = statusItem.button?.layer else { return }
+    /// A transient, click-through window under the menu-bar icon that plays the
+    /// two-paw walk-in, then fades itself out.
+    private func showPawSteps() {
+        guard let buttonWindow = statusItem.button?.window else { return }
+        let bf = buttonWindow.frame
+        let size = NSSize(width: 120, height: 64)
 
-        let hop = CAKeyframeAnimation(keyPath: "position")
-        hop.isAdditive = true
-        hop.values = [CGPoint(x: 0, y: 0), CGPoint(x: 0, y: 3), CGPoint(x: 0, y: 0),
-                      CGPoint(x: 0, y: 3), CGPoint(x: 0, y: 0)].map { NSValue(point: $0) }
-        hop.keyTimes = [0, 0.25, 0.5, 0.75, 1]
+        let panel = NSPanel(contentRect: NSRect(origin: .zero, size: size),
+                            styleMask: [.borderless, .nonactivatingPanel],
+                            backing: .buffered, defer: false)
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.level = .statusBar
+        panel.ignoresMouseEvents = true
+        panel.contentViewController = NSHostingController(rootView: PawStepView())
+        panel.setFrameOrigin(NSPoint(x: bf.midX - size.width / 2, y: bf.minY - size.height))
+        panel.orderFrontRegardless()
 
-        let tilt = CAKeyframeAnimation(keyPath: "transform.rotation.z")
-        tilt.isAdditive = true
-        tilt.values = [0, -0.2, 0, 0.2, 0]
-        tilt.keyTimes = [0, 0.25, 0.5, 0.75, 1]
-
-        let group = CAAnimationGroup()
-        group.animations = [hop, tilt]
-        group.duration = 0.5
-        group.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        layer.add(group, forKey: "pawStep")
+        // Hold, then fade the whole panel out and close it.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+            NSAnimationContext.runAnimationGroup({ ctx in
+                ctx.duration = 0.35
+                panel.animator().alphaValue = 0
+            }, completionHandler: { panel.close() })
+        }
     }
 }
