@@ -118,11 +118,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let img = NSImage(size: NSSize(width: w, height: h))
         img.lockFocus()
         for i in 0..<2 {
-            let p = (t + CGFloat(i) * 0.5).truncatingRemainder(dividingBy: 1) // 0 bottom → 1 top
+            let p = (t + CGFloat(i) * 0.5).truncatingRemainder(dividingBy: 1) // 0 back → 1 forward
             let x: CGFloat = (i == 0) ? 8 : 16
-            let y = p * h
-            let alpha = sin(.pi * p)              // fade in low, fade out high
-            let size = 10 + 2 * sin(.pi * p)
+            let y = 2 + p * (h - 4)
+            let alpha = pow(sin(.pi * p), 0.6)    // fade in, hold, fade out
+            let size = 7 + 9 * p                  // grows as the paw steps forward
 
             let cfg = NSImage.SymbolConfiguration(pointSize: size, weight: .regular)
             guard let paw = NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: nil)?
