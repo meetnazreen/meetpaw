@@ -213,7 +213,7 @@ struct MeetingRow: View {
             }
             Spacer()
             Button(action: edit) {
-                Image(systemName: "pencil")
+                Image(systemName: "square.and.pencil")
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
