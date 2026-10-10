@@ -5,6 +5,7 @@ struct MenuContent: View {
     @Bindable var model: AppModel
     @State private var showSchedule = false
     @State private var scheduleSession = 0   // bump to reset the form each open
+    @State private var showInstant = false   // drawer instant-meeting widget
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -97,23 +98,31 @@ struct MenuContent: View {
         }
     }
 
+    @ViewBuilder
     private var meetingsList: some View {
+        if showInstant {
+            // Creating/created an instant meeting from the drawer → show only
+            // the link widget, hide everything else.
+            LinkWidget(model: model) {
+                showInstant = false
+                model.dismissCreatedLink()
+            }
+            .padding(.top, 6)
+        } else {
+            meetingsListMain
+        }
+    }
+
+    private var meetingsListMain: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
+                showInstant = true
                 model.newInstantMeeting()
             } label: {
-                HStack {
-                    if model.creatingLink {
-                        ProgressView().controlSize(.small)
-                        Text("Creating…")
-                    } else {
-                        Label("New instant meeting", systemImage: "video.fill.badge.plus")
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                Label("New instant meeting", systemImage: "video.fill.badge.plus")
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.borderedProminent)
-            .disabled(model.creatingLink)
             .padding(.horizontal, 12).padding(.top, 12)
 
             Button {
