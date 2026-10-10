@@ -150,6 +150,9 @@ struct ScheduleForm: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+            .glassCard(cornerRadius: 10)
+            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.orange.opacity(0.35)))
         }
     }
 
