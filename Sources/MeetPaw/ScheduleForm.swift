@@ -21,24 +21,23 @@ struct ScheduleForm: View {
                 .textFieldStyle(.plain)
                 .glassField()
 
-            // iOS-style inline calendar for the date.
-            labeled("Date") {
-                DatePicker("", selection: $start, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .labelsHidden()
-            }
-
+            // Separate native Date and Time fields (both edit `start`).
             HStack(alignment: .bottom, spacing: 12) {
+                labeled("Date") {
+                    DatePicker("", selection: $start, displayedComponents: .date)
+                        .datePickerStyle(.compact).labelsHidden()
+                }
                 labeled("Time") {
                     DatePicker("", selection: $start, displayedComponents: .hourAndMinute)
                         .datePickerStyle(.compact).labelsHidden()
                 }
-                labeled("Duration") {
-                    Picker("", selection: $durationMinutes) {
-                        ForEach(durations, id: \.self) { Text("\($0) min").tag($0) }
-                    }
-                    .pickerStyle(.menu).labelsHidden()
+            }
+
+            labeled("Duration") {
+                Picker("", selection: $durationMinutes) {
+                    ForEach(durations, id: \.self) { Text("\($0) min").tag($0) }
                 }
+                .pickerStyle(.menu).labelsHidden()
             }
 
             // Attendees as chips.

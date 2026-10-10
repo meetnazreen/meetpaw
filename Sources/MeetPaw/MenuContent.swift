@@ -4,6 +4,7 @@ import AppKit
 struct MenuContent: View {
     @Bindable var model: AppModel
     @State private var showSchedule = false
+    @State private var scheduleSession = 0   // bump to reset the form each open
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -115,7 +116,10 @@ struct MenuContent: View {
             .disabled(model.creatingLink)
             .padding(.horizontal, 12).padding(.top, 12)
 
-            Button { showSchedule.toggle() } label: {
+            Button {
+                if !showSchedule { scheduleSession += 1 }   // fresh fields on open
+                showSchedule.toggle()
+            } label: {
                 Label("Schedule meeting", systemImage: "calendar.badge.plus")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -125,6 +129,7 @@ struct MenuContent: View {
             ZStack(alignment: .top) {
                 if showSchedule {
                     ScheduleForm(model: model) { showSchedule = false }
+                        .id(scheduleSession)   // new identity each open → reset state
                         // Form drops in from the top.
                         .transition(.move(edge: .top).combined(with: .opacity))
                 } else {
