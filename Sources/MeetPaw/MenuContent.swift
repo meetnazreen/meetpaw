@@ -3,6 +3,7 @@ import AppKit
 
 struct MenuContent: View {
     @Bindable var model: AppModel
+    @State private var showSchedule = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -112,7 +113,18 @@ struct MenuContent: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(model.creatingLink)
-            .padding(12)
+            .padding(.horizontal, 12).padding(.top, 12)
+
+            Button { withAnimation { showSchedule.toggle() } } label: {
+                Label("Schedule meeting", systemImage: "calendar.badge.plus")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered).tint(.secondary)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+
+            if showSchedule {
+                ScheduleForm(model: model) { withAnimation { showSchedule = false } }
+            }
 
             if model.meetings.isEmpty {
                 Text("No upcoming meetings in the next 24 hours.")

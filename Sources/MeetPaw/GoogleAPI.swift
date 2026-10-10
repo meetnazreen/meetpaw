@@ -81,6 +81,39 @@ struct GoogleAPI {
         return url
     }
 
+    /// Creates a scheduled calendar event (optionally with a Meet link) and
+    /// emails invites to the attendees.
+    func createEvent(title: String, start: Date, end: Date,
+                     attendees: [String], addMeet: Bool) async throws {
+        let token = try await auth.accessToken()
+        let fmt = ISO8601DateFormatter()
+        var body: [String: Any] = [
+            "summary": title,
+            "start": ["dateTime": fmt.string(from: start)],
+            "end": ["dateTime": fmt.string(from: end)],
+        ]
+        if !attendees.isEmpty {
+            body["attendees"] = attendees.map { ["email": $0] }
+        }
+        if addMeet {
+            body["conferenceData"] = ["createRequest": [
+                "requestId": UUID().uuidString,
+                "conferenceSolutionKey": ["type": "hangoutsMeet"],
+            ]]
+        }
+        // conferenceDataVersion=1 to attach Meet; sendUpdates=all to email invites.
+        var req = URLRequest(url: URL(string: "https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1&sendUpdates=all")!)
+        req.httpMethod = "POST"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard let http = resp as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw AuthError.server(String(data: data, encoding: .utf8) ?? "Could not schedule meeting.")
+        }
+    }
+
     private func get(_ url: URL, token: String) async throws -> Data {
         var req = URLRequest(url: url)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
