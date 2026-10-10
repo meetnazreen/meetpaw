@@ -216,6 +216,7 @@ struct GlassLinkCard: View {
             HStack(spacing: 8) {
                 Button(action: join) {
                     Label("Join", systemImage: "arrow.up.forward.app")
+                        .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.meetpaw)
@@ -226,12 +227,12 @@ struct GlassLinkCard: View {
                 } label: {
                     Label(copied ? "Copied!" : "Copy link",
                           systemImage: copied ? "checkmark" : "doc.on.doc")
+                        .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .tint(.secondary)
-                Spacer()
             }
-            .controlSize(.small)
+            .controlSize(.large)
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
