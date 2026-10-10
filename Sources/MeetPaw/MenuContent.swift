@@ -80,41 +80,47 @@ struct MenuContent: View {
 
     private var hamburger: some View {
         Menu {
+            Button { showAccountSwitcher = false; showAddAccount = true } label: {
+                Label("Add account…", systemImage: "plus.circle.fill")
+            }
+            .tint(.meetpaw)
             if model.isSignedIn {
                 Button { Task { await model.refresh() } } label: {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
             }
-            // Default account (its provider) for new instant meetings.
-            if model.accounts.count > 1 {
-                Picker("Default for new meeting", selection: Binding(
-                    get: { model.defaultAccountID ?? model.accounts.first?.id ?? "" },
-                    set: { model.defaultAccountID = $0 })) {
-                    ForEach(model.accounts) { a in
-                        Text("\(a.provider.name) · \(a.shortEmail)").tag(a.id)
-                    }
-                }
-            }
-            Toggle(isOn: $model.launchAtLogin) {
-                Label("Launch at login", systemImage: "power")
-            }
+
             if !model.accounts.isEmpty {
-                Divider()
-                Text("Accounts")
-                ForEach(model.accounts) { a in
-                    Button(role: .destructive) { model.signOut(a) } label: {
-                        Label("Sign out \(a.provider.name) · \(a.shortEmail)",
-                              systemImage: "rectangle.portrait.and.arrow.right")
+                Section("Accounts") {
+                    ForEach(model.accounts) { a in
+                        Button(role: .destructive) { model.signOut(a) } label: {
+                            Label("\(a.email) — Sign out",
+                                  systemImage: "rectangle.portrait.and.arrow.right")
+                        }
                     }
                 }
             }
-            Divider()
-            Button { showAddAccount = true } label: {
-                Label("Add account…", systemImage: "plus.circle")
+
+            if model.accounts.count > 1 {
+                Section("Default meeting provider") {
+                    Picker("", selection: Binding(
+                        get: { model.defaultAccountID ?? model.accounts.first?.id ?? "" },
+                        set: { model.defaultAccountID = $0 })) {
+                        ForEach(model.accounts) { a in
+                            Text("\(a.provider.name) · \(a.shortEmail)").tag(a.id)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                }
             }
-            Divider()
-            Button { NSApp.terminate(nil) } label: {
-                Label("Quit MeetPaw", systemImage: "xmark.circle")
+
+            Section("Settings") {
+                Toggle(isOn: $model.launchAtLogin) {
+                    Label("Launch at login", systemImage: "power")
+                }
+                Button { NSApp.terminate(nil) } label: {
+                    Label("Quit MeetPaw", systemImage: "xmark.circle")
+                }
             }
         } label: {
             Image(systemName: "line.3.horizontal").foregroundStyle(.secondary)
