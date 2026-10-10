@@ -205,6 +205,8 @@ struct MeetingRow: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(hovering ? Color.primary.opacity(0.06) : .clear)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: join)   // whole row is clickable
         .onHover { hovering = $0 }
     }
 
