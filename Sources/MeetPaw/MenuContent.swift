@@ -102,17 +102,16 @@ struct MenuContent: View {
             }
 
             if model.signedProviders.count > 1 {
-                Section("Default meeting provider") {
+                Picker(selection: Binding(
+                    get: { model.defaultProvider },
+                    set: { model.setDefaultProvider($0) })) {
                     ForEach(model.signedProviders) { p in
-                        Button { model.setDefaultProvider(p) } label: {
-                            Label {
-                                Text(model.defaultProvider == p ? "\(p.name)  ✓" : p.name)
-                            } icon: {
-                                ProviderLogo.menuIcon(p)
-                            }
-                        }
+                        Label { Text(p.name) } icon: { ProviderLogo.menuIcon(p) }.tag(p)
                     }
+                } label: {
+                    Text("Default meeting provider")
                 }
+                .pickerStyle(.inline)
             }
 
             Section("Settings") {
