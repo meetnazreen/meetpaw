@@ -29,7 +29,7 @@ struct MenuContent: View {
 
     private var addAccountScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button { showAddAccount = false } label: {
+            Button { model.cancelSignIn(); showAddAccount = false } label: {
                 Label("Back", systemImage: "chevron.left")
             }
             .buttonStyle(.plain).foregroundStyle(.secondary)

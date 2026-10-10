@@ -43,7 +43,7 @@ final class LoopbackListener {
         }
     }
 
-    func waitForCallback(timeout: TimeInterval = 300) async throws -> OAuthCallback {
+    func waitForCallback(timeout: TimeInterval = 120) async throws -> OAuthCallback {
         try await withThrowingTaskGroup(of: OAuthCallback.self) { group in
             group.addTask { try await self.awaitRedirect() }
             group.addTask {

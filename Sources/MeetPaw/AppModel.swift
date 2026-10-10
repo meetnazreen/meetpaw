@@ -49,6 +49,7 @@ final class AppModel {
 
     @ObservationIgnored private var clients: [String: OAuthClient] = [:]
     @ObservationIgnored private var refreshTimer: Timer?
+    @ObservationIgnored private var signInTask: Task<Void, Never>?
 
     init() {
         defaultAccountID = UserDefaults.standard.string(forKey: "defaultAccountID")
@@ -112,11 +113,12 @@ final class AppModel {
             state = .error("Up to \(Self.maxAccountsPerProvider) \(provider.name) accounts.")
             return
         }
-        Task {
+        signInTask = Task {
             signingIn = true
             defer { signingIn = false }
             do {
                 let token = try await OAuthClient.authorize(provider: provider)
+                try Task.checkCancellation()
                 let email = await OAuthClient.identity(provider: provider, token: token)
                 let account = Account(provider: provider, email: email)
                 if let data = try? JSONEncoder().encode(token) {
@@ -128,10 +130,21 @@ final class AppModel {
                 if defaultAccountID == nil { defaultAccountID = account.id }
                 await refresh()
                 startTimer()
+            } catch is CancellationError {
+                // user backed out — stay quiet
             } catch {
-                state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+                if !Task.isCancelled {
+                    state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+                }
             }
         }
+    }
+
+    /// Cancel an in-flight sign-in (e.g. user closed the browser / hit Back).
+    func cancelSignIn() {
+        signInTask?.cancel()
+        signInTask = nil
+        signingIn = false
     }
 
     func signOut(_ account: Account) {
