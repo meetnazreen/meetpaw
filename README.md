@@ -68,6 +68,11 @@ swift run MeetPaw --selftest   # runs the event-parsing self-check
 swift build                    # debug build
 ```
 
+## Author
+
+Created and maintained by **Nazreen** &lt;nazreenexe@outlook.com&gt;
+([@meetnazreen](https://github.com/meetnazreen)).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
