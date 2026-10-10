@@ -78,6 +78,8 @@ struct ScheduleForm: View {
                 }
             }
 
+            conflictWarning
+
             // Attendees as chips.
             VStack(alignment: .leading, spacing: 6) {
                 if !emails.isEmpty {
@@ -125,6 +127,36 @@ struct ScheduleForm: View {
     private var accountLabel: String {
         guard let a = account else { return "Select account" }
         return "\(a.provider.name) · \(a.email)"
+    }
+
+    private var conflicts: [AccountEvent] {
+        model.conflicts(start: start, durationMinutes: durationMinutes, excluding: editing?.id)
+    }
+
+    @ViewBuilder
+    private var conflictWarning: some View {
+        let list = conflicts
+        if !list.isEmpty {
+            VStack(alignment: .leading, spacing: 3) {
+                Label("Overlaps \(list.count) event\(list.count == 1 ? "" : "s")",
+                      systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout).foregroundStyle(.orange)
+                ForEach(list.prefix(3)) { c in
+                    Text("• \(c.event.summary ?? "Untitled") · \(c.account.shortEmail)\(timeOf(c))")
+                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+                if list.count > 3 {
+                    Text("• +\(list.count - 3) more").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func timeOf(_ c: AccountEvent) -> String {
+        guard let d = c.event.startDate else { return "" }
+        let f = DateFormatter(); f.dateStyle = .none; f.timeStyle = .short
+        return " at \(f.string(from: d))"
     }
 
     private func avatar(_ a: Account) -> Image { Image(nsImage: ProviderLogo.avatarImage(a.provider, size: 18)) }

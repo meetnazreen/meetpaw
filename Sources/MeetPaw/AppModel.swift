@@ -212,6 +212,17 @@ final class AppModel {
         return accounts.first { $0.provider == .google }
     }
 
+    /// Events across all connected calendars that overlap the given slot.
+    func conflicts(start: Date, durationMinutes: Int, excluding id: String? = nil) -> [AccountEvent] {
+        let end = start.addingTimeInterval(TimeInterval(durationMinutes * 60))
+        return meetings.filter { item in
+            if let id, item.id == id { return false }
+            guard let s = item.event.startDate else { return false }
+            let e = item.event.endDate ?? s.addingTimeInterval(30 * 60)
+            return start < e && s < end          // half-open overlap
+        }
+    }
+
     /// Account preselected in the schedule form: the header-selected one, else default.
     var formAccount: Account? {
         if let sel = selectedAccountID, let a = accounts.first(where: { $0.id == sel }) { return a }
