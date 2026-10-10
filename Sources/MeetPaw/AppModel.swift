@@ -126,6 +126,21 @@ final class AppModel {
         }
     }
 
+    /// Deletes an event (optimistic remove, restores on failure).
+    func deleteEvent(_ event: CalendarEvent) {
+        let backup = meetings
+        meetings.removeAll { $0.id == event.id }
+        Notifier.shared.schedule(meetings)
+        Task {
+            do {
+                try await api.deleteEvent(id: event.id)
+            } catch {
+                meetings = backup           // restore
+                state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            }
+        }
+    }
+
     func copyLink() {
         guard let url = createdLink else { return }
         NSPasteboard.general.clearContents()

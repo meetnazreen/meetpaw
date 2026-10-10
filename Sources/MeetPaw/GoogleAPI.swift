@@ -114,6 +114,20 @@ struct GoogleAPI {
         }
     }
 
+    /// Deletes an event from the user's primary calendar.
+    func deleteEvent(id: String) async throws {
+        let token = try await auth.accessToken()
+        let enc = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        var req = URLRequest(url: URL(string: "https://www.googleapis.com/calendar/v3/calendars/primary/events/\(enc)?sendUpdates=all")!)
+        req.httpMethod = "DELETE"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200...299).contains(code) || code == 410 else {   // 410 = already gone
+            throw AuthError.server(String(data: data, encoding: .utf8) ?? "Could not delete event.")
+        }
+    }
+
     private func get(_ url: URL, token: String) async throws -> Data {
         var req = URLRequest(url: url)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

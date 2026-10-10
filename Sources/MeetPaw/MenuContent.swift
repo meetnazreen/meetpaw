@@ -156,7 +156,9 @@ struct MenuContent: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(model.meetings) { event in
-                            MeetingRow(event: event) { model.join(event) }
+                            SwipeToDelete(onDelete: { model.deleteEvent(event) }) {
+                                MeetingRow(event: event) { model.join(event) }
+                            }
                         }
                     }
                 }
