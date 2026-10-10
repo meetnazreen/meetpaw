@@ -1,0 +1,7 @@
+.build/
+MeetPaw.app/
+*.xcodeproj
+.DS_Store
+# never commit OAuth credentials
+credentials.json
+client_secret*.json
