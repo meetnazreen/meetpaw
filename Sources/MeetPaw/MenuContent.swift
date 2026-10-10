@@ -101,16 +101,17 @@ struct MenuContent: View {
                 }
             }
 
-            if model.accounts.count > 1 {
+            if model.signedProviders.count > 1 {
                 Section("Default meeting provider") {
-                    Picker("", selection: Binding(
-                        get: { model.defaultAccountID ?? model.accounts.first?.id ?? "" },
-                        set: { model.defaultAccountID = $0 })) {
-                        ForEach(model.accounts) { a in
-                            Text("\(a.provider.name) · \(a.shortEmail)").tag(a.id)
+                    ForEach(model.signedProviders) { p in
+                        Button { model.setDefaultProvider(p) } label: {
+                            Label {
+                                Text(model.defaultProvider == p ? "\(p.name)  ✓" : p.name)
+                            } icon: {
+                                ProviderLogo.menuIcon(p)
+                            }
                         }
                     }
-                    .pickerStyle(.inline)
                 }
             }
 

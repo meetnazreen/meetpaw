@@ -16,27 +16,35 @@ enum ProviderLogo {
         }
         return nil
     }
+
+    /// Small image for native menu items (menus can't render the ZStack avatar).
+    static func menuIcon(_ p: Provider) -> Image? {
+        guard let img = image(p) else { return nil }
+        let copy = NSImage(size: NSSize(width: 16, height: 16))
+        copy.lockFocus()
+        img.draw(in: NSRect(x: 0, y: 0, width: 16, height: 16),
+                 from: .zero, operation: .sourceOver, fraction: 1)
+        copy.unlockFocus()
+        return Image(nsImage: copy)
+    }
 }
 
-/// Round white badge with the provider logo centered inside.
+/// Round avatar: the provider logo fills the circle (white backs any transparency).
 struct ProviderLogoView: View {
     let provider: Provider
     var size: CGFloat = 20
     var body: some View {
         ZStack {
             Circle().fill(.white)
-            Group {
-                if let logo = ProviderLogo.image(provider) {
-                    Image(nsImage: logo).resizable().scaledToFit()
-                } else {
-                    Image(systemName: provider.fallbackSymbol)
-                        .font(.system(size: size * 0.5))
-                        .foregroundStyle(.secondary)
-                }
+            if let logo = ProviderLogo.image(provider) {
+                Image(nsImage: logo).resizable().scaledToFill()
+            } else {
+                Image(systemName: provider.fallbackSymbol)
+                    .font(.system(size: size * 0.5)).foregroundStyle(.secondary)
             }
-            .frame(width: size * 0.62, height: size * 0.62)
         }
         .frame(width: size, height: size)
+        .clipShape(Circle())
         .overlay(Circle().strokeBorder(.black.opacity(0.06)))
     }
 }

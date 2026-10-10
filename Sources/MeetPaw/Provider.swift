@@ -7,7 +7,7 @@ enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
 
     var name: String {
         switch self {
-        case .google: return "Google"
+        case .google: return "Google Meet"
         case .zoom: return "Zoom"
         case .microsoft: return "Microsoft Teams"
         }

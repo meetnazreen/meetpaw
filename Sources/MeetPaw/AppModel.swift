@@ -34,6 +34,19 @@ final class AppModel {
         accounts.first { $0.id == defaultAccountID } ?? accounts.first
     }
 
+    /// Distinct providers the user is signed into (order of first appearance).
+    var signedProviders: [Provider] {
+        var seen: [Provider] = []
+        for a in accounts where !seen.contains(a.provider) { seen.append(a.provider) }
+        return seen
+    }
+
+    var defaultProvider: Provider { defaultAccount?.provider ?? .google }
+
+    func setDefaultProvider(_ p: Provider) {
+        if let a = accounts.first(where: { $0.provider == p }) { defaultAccountID = a.id }
+    }
+
     @ObservationIgnored private var clients: [String: OAuthClient] = [:]
     @ObservationIgnored private var refreshTimer: Timer?
 
