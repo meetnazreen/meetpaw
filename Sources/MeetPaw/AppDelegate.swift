@@ -54,15 +54,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        // Left-click signed in → the menu-bar paw walks while generating,
-        // then the widget slides up.
+        // Left-click signed in → the menu-bar paw walks while generating; the
+        // walk timer opens the widget the moment the link is ready.
         drawerPopover.performClose(nil)
         startWalking()
         model.newInstantMeeting()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak self] in
-            guard let self else { return }
-            self.show(self.linkPopover)
-        }
     }
 
     // MARK: Popover helpers
@@ -91,17 +87,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self, let button = self.statusItem.button else { timer.invalidate(); return }
             self.walkPhase = (self.walkPhase + 1) % Self.walkFrames
             button.image = Self.walkFrame(phase: self.walkPhase)
-            // Stop once generation finishes (but play at least ~0.6s).
-            if !self.model.creatingLink && Date().timeIntervalSince(started) > 0.6 {
+
+            // Keep walking until the link is ready (or it fails), min ~0.5s so
+            // the walk is visible, then stop exactly as the widget opens.
+            let elapsed = Date().timeIntervalSince(started)
+            let ready = self.model.createdLink != nil
+            let failed = !self.model.creatingLink && self.model.createdLink == nil
+            if elapsed > 0.5 && (ready || failed) {
                 timer.invalidate(); self.walkTimer = nil
                 button.image = Self.singlePaw()
+                if ready { self.show(self.linkPopover) }
+                else { self.show(self.drawerPopover) }   // surface the error
             }
         }
     }
 
-    /// The resting single-paw menu-bar image.
+    // Fixed icon canvas so the button width never changes (walk vs rest),
+    // which keeps the anchored popover from shifting.
+    private static let iconW: CGFloat = 30
+    private static let iconH: CGFloat = 18
+
+    /// The resting single paw, drawn centered in the fixed-width canvas.
     private static func singlePaw() -> NSImage {
-        let img = NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: "MeetPaw")!
+        let img = NSImage(size: NSSize(width: iconW, height: iconH))
+        img.lockFocus()
+        let cfg = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
+        if let paw = NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: "MeetPaw")?
+            .withSymbolConfiguration(cfg) {
+            let s = paw.size
+            paw.draw(in: NSRect(x: (iconW - s.width) / 2, y: (iconH - s.height) / 2,
+                                width: s.width, height: s.height))
+        }
+        img.unlockFocus()
         img.isTemplate = true
         return img
     }
@@ -112,14 +129,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// and fading, staggered half a cycle apart so one is up while the other
     /// is down — a walking-up loop. No tilt.
     private static func walkFrame(phase: Int) -> NSImage {
-        let w: CGFloat = 24, h: CGFloat = 18
+        let w = iconW, h = iconH
         let t = CGFloat(phase) / CGFloat(walkFrames)
 
         let img = NSImage(size: NSSize(width: w, height: h))
         img.lockFocus()
         for i in 0..<2 {
             let p = (t + CGFloat(i) * 0.5).truncatingRemainder(dividingBy: 1) // 0 back → 1 forward
-            let x: CGFloat = (i == 0) ? 8 : 16
+            let x: CGFloat = (i == 0) ? 8 : 22    // wider apart so they don't touch
             let y = 2 + p * (h - 4)
             let alpha = pow(sin(.pi * p), 0.6)    // fade in, hold, fade out
             let size = 7 + 9 * p                  // grows as the paw steps forward
