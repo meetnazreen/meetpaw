@@ -9,12 +9,17 @@ struct MenuContent: View {
             header
             Divider()
             body(for: model.state)
-            Divider()
-            footer
         }
         .frame(width: 320)
         .tint(.meetpaw)
         .animation(.spring(duration: 0.3), value: model.createdLink)
+    }
+
+    private var isSignedIn: Bool {
+        switch model.state {
+        case .signedOut, .needsCredentials: return false
+        default: return true
+        }
     }
 
     // MARK: Header
@@ -25,13 +30,31 @@ struct MenuContent: View {
                 .foregroundStyle(.tint)
             Text("MeetPaw").font(.headline)
             Spacer()
-            if case .ready = model.state {
-                Button { Task { await model.refresh() } } label: {
-                    Image(systemName: "arrow.clockwise")
+            Menu {
+                if isSignedIn {
+                    Button { Task { await model.refresh() } } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
                 }
-                .buttonStyle(.borderless)
-                .help("Refresh")
+                Toggle(isOn: $model.launchAtLogin) {
+                    Label("Launch at login", systemImage: "power")
+                }
+                Divider()
+                if isSignedIn {
+                    Button(role: .destructive) { model.signOut() } label: {
+                        Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                }
+                Button { NSApp.terminate(nil) } label: {
+                    Label("Quit MeetPaw", systemImage: "xmark.circle")
+                }
+            } label: {
+                Image(systemName: "line.3.horizontal")
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Menu")
         }
         .padding(12)
     }
@@ -113,26 +136,6 @@ struct MenuContent: View {
                 .frame(maxHeight: 280)
             }
         }
-    }
-
-    // MARK: Footer
-
-    private var footer: some View {
-        VStack(spacing: 8) {
-            Toggle("Launch at login", isOn: $model.launchAtLogin)
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            HStack {
-                if case .signedOut = model.state {} else if case .needsCredentials = model.state {} else {
-                    Button("Sign out") { model.signOut() }.buttonStyle(.borderless)
-                }
-                Spacer()
-                Button("Quit") { NSApp.terminate(nil) }.buttonStyle(.borderless)
-            }
-        }
-        .font(.callout)
-        .padding(12)
     }
 
     // MARK: Helpers
