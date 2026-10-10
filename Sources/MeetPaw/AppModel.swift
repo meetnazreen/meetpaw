@@ -296,12 +296,24 @@ final class AppModel {
         Notifier.shared.schedule(meetings.map(\.event))
         Task {
             do {
-                try await GoogleAPI(auth: client).deleteEvent(id: item.event.id)
+                switch item.account.provider {
+                case .google:
+                    try await GoogleAPI(auth: client).deleteEvent(id: item.event.id)
+                case .zoom:
+                    try await ProviderAPI(auth: client).deleteMeeting(rawID: strip("zoom-", item.event.id))
+                case .microsoft:
+                    try await ProviderAPI(auth: client).deleteMeeting(rawID: strip("teams-", item.event.id))
+                }
             } catch {
-                meetings = backup
-                state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+                meetings = backup    // restore the row; don't blank the whole UI
+                accountErrors[item.account.id] =
+                    "Delete failed: " + ((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             }
         }
+    }
+
+    private func strip(_ prefix: String, _ id: String) -> String {
+        id.hasPrefix(prefix) ? String(id.dropFirst(prefix.count)) : id
     }
 
     // MARK: Link helpers

@@ -158,6 +158,21 @@ struct ProviderAPI {
         try Self.check(resp, data)
     }
 
+    func deleteMeeting(rawID: String) async throws {
+        let token = try await auth.accessToken()
+        let url: String
+        switch auth.provider {
+        case .zoom: url = "https://api.zoom.us/v2/meetings/\(rawID)"
+        case .microsoft: url = "https://graph.microsoft.com/v1.0/me/events/\(rawID)"
+        case .google: throw AuthError.server("Use GoogleAPI for Google.")
+        }
+        var req = URLRequest(url: URL(string: url)!)
+        req.httpMethod = "DELETE"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try Self.check(resp, data)   // 204 on success
+    }
+
     static func check(_ resp: URLResponse, _ data: Data) throws {
         guard let http = resp as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw AuthError.server(String(data: data, encoding: .utf8) ?? "Request failed.")
