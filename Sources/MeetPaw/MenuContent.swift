@@ -57,13 +57,14 @@ struct MenuContent: View {
     private var accountDropdown: some View {
         Menu {
             Button { model.selectedAccountID = nil } label: {
-                Label("All accounts", systemImage: model.selectedAccountID == nil ? "checkmark" : "")
+                if model.selectedAccountID == nil { Label("All accounts", systemImage: "checkmark") }
+                else { Text("All accounts") }
             }
             Divider()
             ForEach(model.accounts) { account in
                 Button { model.selectedAccountID = account.id } label: {
-                    Label(account.email,
-                          systemImage: model.selectedAccountID == account.id ? "checkmark" : "")
+                    if model.selectedAccountID == account.id { Label(account.email, systemImage: "checkmark") }
+                    else { Text(account.email) }
                 }
             }
         } label: {
