@@ -18,6 +18,34 @@ enum ProviderLogo {
     }
     static func image(_ p: Provider) -> NSImage? { image(named: p.logoResource) }
 
+    /// A round avatar pre-rasterized to an exact pixel size — safe inside
+    /// `Menu` labels (which otherwise ignore a SwiftUI image's frame).
+    static func avatarImage(_ p: Provider, size: CGFloat) -> NSImage {
+        let out = NSImage(size: NSSize(width: size, height: size))
+        out.lockFocus()
+        let rect = NSRect(x: 0, y: 0, width: size, height: size)
+        NSColor.white.setFill()
+        NSBezierPath(ovalIn: rect).fill()
+        NSBezierPath(ovalIn: rect).addClip()
+        if let logo = image(p) {
+            let s = logo.size
+            if p.avatarFills {
+                let scale = max(size / s.width, size / s.height) * 1.14
+                let w = s.width * scale, h = s.height * scale
+                logo.draw(in: NSRect(x: (size - w) / 2, y: (size - h) / 2, width: w, height: h),
+                          from: .zero, operation: .sourceOver, fraction: 1)
+            } else {
+                let box = size * 0.64
+                let scale = min(box / s.width, box / s.height)
+                let w = s.width * scale, h = s.height * scale
+                logo.draw(in: NSRect(x: (size - w) / 2, y: (size - h) / 2, width: w, height: h),
+                          from: .zero, operation: .sourceOver, fraction: 1)
+            }
+        }
+        out.unlockFocus()
+        return out
+    }
+
     /// Small, aspect-correct image for native menu items.
     static func menuIcon(_ p: Provider) -> Image? {
         guard let img = image(p) else { return nil }

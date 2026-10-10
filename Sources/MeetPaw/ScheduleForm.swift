@@ -127,21 +127,28 @@ struct ScheduleForm: View {
         return "\(a.provider.name) · \(a.email)"
     }
 
+    private func avatar(_ a: Account) -> Image { Image(nsImage: ProviderLogo.avatarImage(a.provider, size: 18)) }
+
     @ViewBuilder
     private var accountField: some View {
         if isEditing {
-            // Account is fixed when editing an existing event.
-            HStack { Text(accountLabel).lineLimit(1); Spacer(minLength: 0) }
-                .foregroundStyle(.secondary)
-                .glassField()
+            HStack(spacing: 8) {
+                if let a = account { avatar(a) }
+                Text(account?.email ?? "").lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .glassField()
         } else {
             Menu {
                 ForEach(model.accounts) { a in
-                    Button { account = a } label: { Text("\(a.provider.name) · \(a.email)") }
+                    Button { account = a } label: {
+                        Label { Text(a.email) } icon: { avatar(a) }
+                    }
                 }
             } label: {
-                HStack(spacing: 6) {
-                    Text(accountLabel).lineLimit(1)
+                HStack(spacing: 8) {
+                    if let a = account { avatar(a) }
+                    Text(account?.email ?? "Select account").lineLimit(1)
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.up.chevron.down").font(.caption2).foregroundStyle(.secondary)
                 }
