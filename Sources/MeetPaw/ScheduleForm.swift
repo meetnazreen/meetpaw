@@ -41,14 +41,18 @@ struct ScheduleForm: View {
                             Button("\(d) min") { durationMinutes = d }
                         }
                     } label: {
-                        Text("\(durationMinutes) min")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .glassField()
+                        HStack(spacing: 4) {
+                            Text("\(durationMinutes) min").foregroundStyle(.primary)
+                            Spacer(minLength: 0)
+                            Image(systemName: "chevron.down")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        .glassField()
                     }
                     .menuStyle(.borderlessButton)
                     .menuIndicator(.hidden)
                     .buttonStyle(.plain)
-                    .frame(width: 78)
+                    .frame(width: 96)
                 }
             }
 
@@ -140,15 +144,19 @@ struct ScheduleForm: View {
 }
 
 extension View {
-    /// A taller text field with a Liquid Glass background (material fallback).
+    /// A fixed-height field with a Liquid Glass background (material fallback),
+    /// so every field in the form lines up to the same size.
     @ViewBuilder
     func glassField() -> some View {
         let shape = RoundedRectangle(cornerRadius: 9)
-        let padded = self.padding(.horizontal, 10).padding(.vertical, 8)
+        let boxed = self
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .frame(height: 34)
         if #available(macOS 26.0, *) {
-            padded.glassEffect(.regular, in: shape)
+            boxed.glassEffect(.regular, in: shape)
         } else {
-            padded.background(.regularMaterial, in: shape)
+            boxed.background(.regularMaterial, in: shape)
                 .overlay(shape.strokeBorder(.quaternary))
         }
     }
