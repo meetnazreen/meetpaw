@@ -13,6 +13,14 @@ final class AppModel {
     private(set) var createdLink: URL?       // last instant meeting, shown in the glass card
     private(set) var creatingLink = false
 
+    /// Synchronous signed-in check derived from UI state.
+    var isSignedIn: Bool {
+        switch state {
+        case .signedOut, .needsCredentials: return false
+        default: return true
+        }
+    }
+
     @ObservationIgnored private let auth = GoogleAuth()
     @ObservationIgnored private lazy var api = GoogleAPI(auth: auth)
     @ObservationIgnored private var refreshTimer: Timer?

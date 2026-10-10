@@ -3,7 +3,7 @@ import AppKit
 
 @main
 struct MeetPawApp: App {
-    @State private var model = AppModel()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
     init() {
         // --selftest short-circuits before the UI (see SelfTest.swift).
@@ -13,10 +13,6 @@ struct MeetPawApp: App {
         }
     }
 
-    var body: some Scene {
-        MenuBarExtra("MeetPaw", systemImage: "pawprint.fill") {
-            MenuContent(model: model)
-        }
-        .menuBarExtraStyle(.window)
-    }
+    // No windows — the status item (AppDelegate) is the whole UI.
+    var body: some Scene { Settings { EmptyView() } }
 }
