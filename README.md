@@ -1,4 +1,8 @@
-# 🐾 MeetPaw
+<p align="center">
+  <img src="docs/icon.png" alt="MeetPaw" width="120" height="120">
+</p>
+
+<h1 align="center">MeetPaw</h1>
 
 A tiny macOS menu-bar app for Google Meet. Spin up an instant meeting link in
 one click, and join your upcoming Google Calendar meetings without digging
