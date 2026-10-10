@@ -30,14 +30,25 @@ enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
         }
     }
 
-    /// Zoom's asset is a full-bleed app icon (fills the circle); the Meet and
-    /// Teams logos are glyphs that need padding (fit).
-    var avatarFills: Bool { self == .zoom }
+    // All logos are glyphs that fit with padding in the round avatar.
+    var avatarFills: Bool { false }
 
-    /// On the sign-in screen Google shows as "Google" with the G favicon;
-    /// elsewhere it's "Google Meet" with the Meet logo.
-    var signInName: String { self == .google ? "Google" : name }
-    var signInLogoResource: String { self == .google ? "google_g" : logoResource }
+    /// On the sign-in screen providers use their platform name + brand logo
+    /// (Google "G", Microsoft squares); elsewhere Google = "Google Meet" etc.
+    var signInName: String {
+        switch self {
+        case .google: return "Google"
+        case .microsoft: return "Microsoft"
+        case .zoom: return "Zoom"
+        }
+    }
+    var signInLogoResource: String {
+        switch self {
+        case .google: return "google_g"
+        case .microsoft: return "microsoft_logo"
+        case .zoom: return "zoom"
+        }
+    }
 
     var keychainAccount: String { rawValue }
     var credentialsFile: String {
