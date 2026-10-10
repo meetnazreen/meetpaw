@@ -57,7 +57,10 @@ enum Provider: String, CaseIterable, Identifiable {
                 scopes: ["meeting:write:meeting"],          // granular user-managed scope
                 redirectHost: "127.0.0.1", fixedPort: 8765, usePKCE: true,
                 clientAuth: .basicHeader, sendScopeOnToken: false,
-                extraAuthParams: [:])
+                extraAuthParams: [:],
+                // Zoom rejects http loopback; use an HTTPS page that forwards
+                // the code to the local listener on 127.0.0.1:8765.
+                redirectOverride: "https://meetnazreen.github.io/meetpaw/oauth/zoom.html")
         case .microsoft:
             return OAuthConfig(
                 authURL: "https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize",
@@ -81,4 +84,5 @@ struct OAuthConfig {
     let clientAuth: ClientAuth
     let sendScopeOnToken: Bool      // Microsoft wants scope on the token request
     let extraAuthParams: [String: String]
+    var redirectOverride: String? = nil   // HTTPS redirect that forwards to loopback
 }

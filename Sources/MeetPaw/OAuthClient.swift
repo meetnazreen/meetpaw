@@ -67,7 +67,8 @@ actor OAuthClient {
 
         let listener = try LoopbackListener(port: config.fixedPort)
         let port = try await listener.start()
-        let redirect = "http://\(config.redirectHost):\(port)"
+        // The registered redirect_uri (HTTPS forwarding page for Zoom), else loopback.
+        let redirect = config.redirectOverride ?? "http://\(config.redirectHost):\(port)"
 
         var comps = URLComponents(string: config.authURL)!
         var items: [URLQueryItem] = [
