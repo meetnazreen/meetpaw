@@ -21,18 +21,16 @@ struct ScheduleForm: View {
                 .textFieldStyle(.plain)
                 .glassField()
 
-            // Date, Time, Duration on one line — unified glass fields, no arrows.
+            // Date, Time, Duration — equal-width glass fields filling the row.
             HStack(alignment: .bottom, spacing: 10) {
                 labeled("Date") {
                     DatePicker("", selection: $start, displayedComponents: .date)
                         .datePickerStyle(.field).labelsHidden()
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         .glassField()
                 }
                 labeled("Time") {
                     DatePicker("", selection: $start, displayedComponents: .hourAndMinute)
                         .datePickerStyle(.field).labelsHidden()
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         .glassField()
                 }
                 labeled("Duration") {
@@ -44,15 +42,14 @@ struct ScheduleForm: View {
                         HStack(spacing: 4) {
                             Text("\(durationMinutes) min").foregroundStyle(.primary)
                             Spacer(minLength: 0)
-                            Image(systemName: "chevron.down")
+                            Image(systemName: "chevron.up.chevron.down")
                                 .font(.caption2).foregroundStyle(.secondary)
                         }
-                        .glassField()
                     }
                     .menuStyle(.borderlessButton)
                     .menuIndicator(.hidden)
                     .buttonStyle(.plain)
-                    .frame(width: 96)
+                    .glassField()
                 }
             }
 
