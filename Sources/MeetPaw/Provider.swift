@@ -59,7 +59,7 @@ enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
             return OAuthConfig(
                 authURL: "https://zoom.us/oauth/authorize",
                 tokenURL: "https://zoom.us/oauth/token",
-                scopes: ["meeting:write:meeting"],          // granular user-managed scope
+                scopes: ["meeting:write:meeting", "user:read:user"],   // write meetings + read email
                 redirectHost: "127.0.0.1", fixedPort: 8765, usePKCE: true,
                 clientAuth: .basicHeader, sendScopeOnToken: false,
                 extraAuthParams: [:],
