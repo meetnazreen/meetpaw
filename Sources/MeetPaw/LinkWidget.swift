@@ -13,8 +13,14 @@ struct LinkWidget: View {
         ZStack {
             if let link = model.createdLink {
                 GlassLinkCard(url: link,
-                              copy: { model.copyLink() },
-                              join: { model.openCreatedLink() },
+                              copy: {
+                                  model.copyLink()
+                                  // Let the "Copied!" tick show, then dismiss.
+                                  DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                                      model.dismissCreatedLink(); onClose()
+                                  }
+                              },
+                              join: { model.openCreatedLink(); model.dismissCreatedLink(); onClose() },
                               dismiss: { model.dismissCreatedLink(); onClose() })
                     .transition(.scale(scale: 0.8).combined(with: .opacity))
             } else {

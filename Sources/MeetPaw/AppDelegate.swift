@@ -72,23 +72,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: Paw-step animation
 
-    /// A quick two-step "paw tap": tilt + bounce left, then right.
+    /// A quick two-step "paw walk": two little hops with a tilt each.
+    /// Additive animations only — they revert to identity, so the icon never
+    /// gets stuck off-screen (and we never touch anchorPoint).
     private func animatePaw() {
         guard let layer = statusItem.button?.layer else { return }
-        layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)   // rotate/scale about center
+
+        let hop = CAKeyframeAnimation(keyPath: "position")
+        hop.isAdditive = true
+        hop.values = [CGPoint(x: 0, y: 0), CGPoint(x: 0, y: 3), CGPoint(x: 0, y: 0),
+                      CGPoint(x: 0, y: 3), CGPoint(x: 0, y: 0)].map { NSValue(point: $0) }
+        hop.keyTimes = [0, 0.25, 0.5, 0.75, 1]
 
         let tilt = CAKeyframeAnimation(keyPath: "transform.rotation.z")
-        tilt.values = [0, -0.22, 0.22, -0.12, 0]
-        tilt.keyTimes = [0, 0.25, 0.55, 0.8, 1]
-
-        let bounce = CAKeyframeAnimation(keyPath: "transform.scale")
-        bounce.values = [1.0, 0.82, 1.12, 0.96, 1.0]
-        bounce.keyTimes = [0, 0.25, 0.55, 0.8, 1]
+        tilt.isAdditive = true
+        tilt.values = [0, -0.2, 0, 0.2, 0]
+        tilt.keyTimes = [0, 0.25, 0.5, 0.75, 1]
 
         let group = CAAnimationGroup()
-        group.animations = [tilt, bounce]
-        group.duration = 0.45
-        group.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        group.animations = [hop, tilt]
+        group.duration = 0.5
+        group.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         layer.add(group, forKey: "pawStep")
     }
 }
