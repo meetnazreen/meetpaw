@@ -6,36 +6,39 @@ import ServiceManagement
 @MainActor
 @Observable
 final class AppModel {
-    enum State { case needsCredentials, signedOut, loading, ready, error(String) }
+    enum State { case signedOut, loading, ready, error(String) }
 
     private(set) var state: State = .signedOut
-    private(set) var meetings: [CalendarEvent] = []
-    private(set) var createdLink: URL?       // last instant meeting, shown in the glass card
+    private(set) var meetings: [AccountEvent] = []       // merged across accounts
+    private(set) var accounts: [Account] = []
+    private(set) var createdLink: URL?
     private(set) var createdProvider: Provider?
     private(set) var creatingLink = false
-    private(set) var signedIn: Set<Provider> = []
+    var signingIn = false                                // separate from list loading
 
-    /// Signed into at least one provider.
-    var isSignedIn: Bool { !signedIn.isEmpty }
-    func isSignedIn(_ p: Provider) -> Bool { signedIn.contains(p) }
-    func hasCredentials(_ p: Provider) -> Bool { Credentials.load(p) != nil }
-
-    /// Provider used for left-click / New instant meeting.
-    var defaultProvider: Provider {
-        get {
-            if let raw = UserDefaults.standard.string(forKey: "defaultProvider"),
-               let p = Provider(rawValue: raw), signedIn.contains(p) { return p }
-            return signedIn.sorted { $0.rawValue < $1.rawValue }.first ?? .google
-        }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: "defaultProvider") }
+    var selectedAccountID: String?                       // nil = All accounts
+    var defaultAccountID: String? {
+        didSet { UserDefaults.standard.set(defaultAccountID, forKey: "defaultAccountID") }
     }
 
-    @ObservationIgnored let clients: [Provider: OAuthClient] =
-        Dictionary(uniqueKeysWithValues: Provider.allCases.map { ($0, OAuthClient($0)) })
-    private var googleAPI: GoogleAPI { GoogleAPI(auth: clients[.google]!) }
+    var isSignedIn: Bool { !accounts.isEmpty }
+    func hasCredentials(_ p: Provider) -> Bool { Credentials.load(p) != nil }
+
+    /// Events shown for the current account filter.
+    var visibleMeetings: [AccountEvent] {
+        guard let sel = selectedAccountID else { return meetings }
+        return meetings.filter { $0.account.id == sel }
+    }
+
+    var defaultAccount: Account? {
+        accounts.first { $0.id == defaultAccountID } ?? accounts.first
+    }
+
+    @ObservationIgnored private var clients: [String: OAuthClient] = [:]
     @ObservationIgnored private var refreshTimer: Timer?
 
     init() {
+        defaultAccountID = UserDefaults.standard.string(forKey: "defaultAccountID")
         Notifier.shared.start()
         Task { await bootstrap() }
         observeWake()
@@ -55,87 +58,146 @@ final class AppModel {
         }
     }
 
+    // MARK: Bootstrap / accounts
+
     private func bootstrap() async {
-        var signed: Set<Provider> = []
-        for p in Provider.allCases where await clients[p]!.isSignedIn { signed.insert(p) }
-        signedIn = signed
+        await migrateLegacyGoogleIfNeeded()
+        accounts = AccountStore.load()
+        for a in accounts { clients[a.id] = OAuthClient(provider: a.provider, keychainKey: a.id) }
         await settle()
     }
 
-    /// Reconcile UI state after a sign-in/out change.
-    private func settle() async {
-        if signedIn.isEmpty { state = .signedOut; refreshTimer?.invalidate(); return }
-        if signedIn.contains(.google) { await refresh(); startTimer() }
-        else { state = .ready }   // Phase 2: merge Zoom/Teams upcoming here
+    /// Migrate the old single-account Google token (Keychain "google") into the
+    /// new per-account model so an existing user stays signed in.
+    private func migrateLegacyGoogleIfNeeded() async {
+        guard AccountStore.load().isEmpty,
+              let data = Keychain.load(account: "google"),
+              let token = try? JSONDecoder().decode(StoredToken.self, from: data) else { return }
+        let email = await OAuthClient.identity(provider: .google, token: token)
+        let account = Account(provider: .google, email: email)
+        Keychain.save(data, account: account.id)
+        AccountStore.add(account)
+        if account.id != "google" { Keychain.clear(account: "google") }
+        if defaultAccountID == nil { defaultAccountID = account.id }
     }
 
-    func signIn(_ provider: Provider) {
+    private func settle() async {
+        if accounts.isEmpty { state = .signedOut; refreshTimer?.invalidate(); return }
+        await refresh()
+        startTimer()
+    }
+
+    func addAccount(_ provider: Provider) {
+        guard !signingIn else { return }
         Task {
-            state = .loading
+            signingIn = true
+            defer { signingIn = false }
             do {
-                try await clients[provider]!.signIn()
-                signedIn.insert(provider)
-                await settle()
+                let token = try await OAuthClient.authorize(provider: provider)
+                let email = await OAuthClient.identity(provider: provider, token: token)
+                let account = Account(provider: provider, email: email)
+                if let data = try? JSONEncoder().encode(token) {
+                    Keychain.save(data, account: account.id)
+                }
+                AccountStore.add(account)
+                accounts = AccountStore.load()
+                clients[account.id] = OAuthClient(provider: provider, keychainKey: account.id)
+                if defaultAccountID == nil { defaultAccountID = account.id }
+                await refresh()
+                startTimer()
             } catch {
                 state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             }
         }
     }
 
-    func signOut(_ provider: Provider) {
+    func signOut(_ account: Account) {
         Task {
-            await clients[provider]!.signOut()
-            signedIn.remove(provider)
-            if provider == .google { meetings = [] }
+            await clients[account.id]?.signOut()
+            clients[account.id] = nil
+            AccountStore.remove(account)
+            accounts = AccountStore.load()
+            meetings.removeAll { $0.account.id == account.id }
+            if selectedAccountID == account.id { selectedAccountID = nil }
+            if defaultAccountID == account.id { defaultAccountID = accounts.first?.id }
             await settle()
         }
     }
+
+    // MARK: Events (Google calendars for now; Zoom/Teams lists later)
 
     func refresh() async {
-        guard signedIn.contains(.google) else { return }   // calendar is Google (Phase 1)
-        if case .ready = state {} else { state = .loading }
-        do {
-            meetings = try await googleAPI.upcomingMeetings()
-            Notifier.shared.schedule(meetings)
-            state = .ready
-        } catch AuthError.invalidGrant {
-            await clients[.google]!.signOut()
-            signedIn.remove(.google)
+        let googleAccounts = accounts.filter { $0.provider == .google }
+        guard !googleAccounts.isEmpty else {
             meetings = []
-            await settle()
-        } catch {
-            state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            state = accounts.isEmpty ? .signedOut : .ready
+            return
         }
+        if case .ready = state {} else { state = .loading }
+
+        let pairs = googleAccounts.compactMap { a in clients[a.id].map { (a, $0) } }
+        var all: [AccountEvent] = []
+        await withTaskGroup(of: [AccountEvent].self) { group in
+            for (account, client) in pairs {
+                group.addTask {
+                    do {
+                        let events = try await GoogleAPI(auth: client).upcomingMeetings()
+                        return events.map { AccountEvent(account: account, event: $0) }
+                    } catch { return [] }   // one account failing must not drop others
+                }
+            }
+            for await part in group { all += part }
+        }
+        all.sort { ($0.event.startDate ?? .distantFuture) < ($1.event.startDate ?? .distantFuture) }
+        meetings = all
+        Notifier.shared.schedule(all.map(\.event))
+        state = .ready
     }
 
+    // MARK: Instant meeting (default account's provider)
+
     func newInstantMeeting() {
-        let provider = defaultProvider
+        guard let account = defaultAccount, let client = clients[account.id] else {
+            state = .error("No account selected."); return
+        }
         Task {
             creatingLink = true
             defer { creatingLink = false }
             do {
                 let url: URL
-                if provider == .google {
-                    url = try await googleAPI.createInstantMeeting()
+                if account.provider == .google {
+                    url = try await GoogleAPI(auth: client).createInstantMeeting()
                 } else {
-                    url = try await ProviderAPI(auth: clients[provider]!).createInstantMeeting()
+                    url = try await ProviderAPI(auth: client).createInstantMeeting()
                 }
                 createdLink = url
-                createdProvider = provider
-                copyLink()                       // auto-copy on create
+                createdProvider = account.provider
+                copyLink()
             } catch {
                 state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             }
         }
     }
 
-    /// Schedules an event; returns true on success (used to collapse the form).
+    // MARK: Schedule / edit / delete (Google account)
+
+    /// The Google account to schedule on: the selected one if it's Google, else
+    /// the default Google account.
+    private var scheduleAccount: Account? {
+        if let sel = selectedAccountID, let a = accounts.first(where: { $0.id == sel }), a.provider == .google { return a }
+        if let d = defaultAccount, d.provider == .google { return d }
+        return accounts.first { $0.provider == .google }
+    }
+
     func scheduleMeeting(title: String, start: Date, durationMinutes: Int,
                          attendees: [String], addMeet: Bool) async -> Bool {
+        guard let account = scheduleAccount, let client = clients[account.id] else {
+            state = .error("Connect a Google account to schedule."); return false
+        }
         do {
             let end = start.addingTimeInterval(TimeInterval(durationMinutes * 60))
-            try await googleAPI.createEvent(title: title, start: start, end: end,
-                                      attendees: attendees, addMeet: addMeet)
+            try await GoogleAPI(auth: client).createEvent(title: title, start: start, end: end,
+                                                          attendees: attendees, addMeet: addMeet)
             await refresh()
             return true
         } catch {
@@ -144,51 +206,48 @@ final class AppModel {
         }
     }
 
-    /// Deletes an event (optimistic remove, restores on failure).
-    func deleteEvent(_ event: CalendarEvent) {
+    func updateMeeting(_ item: AccountEvent, title: String, start: Date,
+                       durationMinutes: Int, attendees: [String], addMeet: Bool) async -> Bool {
+        guard let client = clients[item.account.id] else { return false }
+        do {
+            let end = start.addingTimeInterval(TimeInterval(durationMinutes * 60))
+            try await GoogleAPI(auth: client).updateEvent(id: item.event.id, title: title, start: start,
+                                end: end, attendees: attendees, addMeet: addMeet, hasMeet: item.event.hasMeet)
+            await refresh()
+            return true
+        } catch {
+            state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            return false
+        }
+    }
+
+    func deleteEvent(_ item: AccountEvent) {
+        guard let client = clients[item.account.id] else { return }
         let backup = meetings
-        meetings.removeAll { $0.id == event.id }
-        Notifier.shared.schedule(meetings)
+        meetings.removeAll { $0.id == item.id }
+        Notifier.shared.schedule(meetings.map(\.event))
         Task {
             do {
-                try await googleAPI.deleteEvent(id: event.id)
+                try await GoogleAPI(auth: client).deleteEvent(id: item.event.id)
             } catch {
-                meetings = backup           // restore
+                meetings = backup
                 state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             }
         }
     }
 
-    /// Updates an existing event; returns true on success.
-    func updateMeeting(event: CalendarEvent, title: String, start: Date,
-                       durationMinutes: Int, attendees: [String], addMeet: Bool) async -> Bool {
-        do {
-            let end = start.addingTimeInterval(TimeInterval(durationMinutes * 60))
-            try await googleAPI.updateEvent(id: event.id, title: title, start: start, end: end,
-                                      attendees: attendees, addMeet: addMeet, hasMeet: event.hasMeet)
-            await refresh()
-            return true
-        } catch {
-            state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
-            return false
-        }
-    }
+    // MARK: Link helpers
 
     func copyLink() {
         guard let url = createdLink else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(url.absoluteString, forType: .string)
     }
-
-    func openCreatedLink() {
-        if let url = createdLink { NSWorkspace.shared.open(url) }
-    }
-
+    func openCreatedLink() { if let url = createdLink { NSWorkspace.shared.open(url) } }
     func dismissCreatedLink() { createdLink = nil }
 
-    func join(_ event: CalendarEvent) {
-        // Meet link if present, otherwise open the event in Google Calendar.
-        if let url = event.openURL { NSWorkspace.shared.open(url) }
+    func join(_ item: AccountEvent) {
+        if let url = item.event.openURL { NSWorkspace.shared.open(url) }
     }
 
     func openCredentialsFolder() {

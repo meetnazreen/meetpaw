@@ -12,7 +12,7 @@ struct StoredToken: Codable {
 
 enum AuthError: Error, LocalizedError {
     case noCredentials
-    case invalidGrant          // refresh token dead → must re-sign-in
+    case invalidGrant
     case server(String)
 
     var errorDescription: String? {
@@ -24,50 +24,52 @@ enum AuthError: Error, LocalizedError {
     }
 }
 
-/// Provider-agnostic OAuth 2.0 installed-app flow (PKCE + loopback redirect).
+/// One signed-in account's token holder. OAuth flow + identity lookup are
+/// static (they run before an account id exists).
 actor OAuthClient {
     let provider: Provider
-    private let config: OAuthConfig
+    let keychainKey: String        // == Account.id
     private var token: StoredToken?
 
-    init(_ provider: Provider) {
+    init(provider: Provider, keychainKey: String) {
         self.provider = provider
-        self.config = provider.oauth
-        if let data = Keychain.load(account: provider.keychainAccount) {
+        self.keychainKey = keychainKey
+        if let data = Keychain.load(account: keychainKey) {
             token = try? JSONDecoder().decode(StoredToken.self, from: data)
         }
     }
 
     var isSignedIn: Bool { token != nil }
-    var hasCredentials: Bool { Credentials.load(provider) != nil }
 
     func signOut() {
         token = nil
-        Keychain.clear(account: provider.keychainAccount)
+        Keychain.clear(account: keychainKey)
     }
 
     func accessToken() async throws -> String {
         guard let creds = Credentials.load(provider) else { throw AuthError.noCredentials }
         guard var tok = token else { throw AuthError.invalidGrant }
         if tok.isExpired {
-            tok = try await refresh(tok, creds: creds)
-            persist(tok)
+            tok = try await Self.refresh(tok, provider: provider, creds: creds)
+            token = tok
+            if let data = try? JSONEncoder().encode(tok) { Keychain.save(data, account: keychainKey) }
         }
         return tok.accessToken
     }
 
-    // MARK: Sign in
+    // MARK: - Static OAuth flow (no persistence)
 
-    func signIn() async throws {
+    /// Runs the full interactive OAuth and returns the token.
+    static func authorize(provider: Provider) async throws -> StoredToken {
         guard let creds = Credentials.load(provider) else { throw AuthError.noCredentials }
+        let config = provider.oauth
 
-        let verifier = Self.randomURLSafe(64)
-        let challenge = Self.s256(verifier)
-        let state = Self.randomURLSafe(16)
+        let verifier = randomURLSafe(64)
+        let challenge = s256(verifier)
+        let state = randomURLSafe(16)
 
         let listener = try LoopbackListener(port: config.fixedPort)
         let port = try await listener.start()
-        // The registered redirect_uri (HTTPS forwarding page for Zoom), else loopback.
         let redirect = config.redirectOverride ?? "http://\(config.redirectHost):\(port)"
 
         var comps = URLComponents(string: config.authURL)!
@@ -91,22 +93,42 @@ actor OAuthClient {
         guard let code = callback.code else {
             throw AuthError.server(callback.error ?? "No authorization code returned.")
         }
-
-        let tok = try await exchange(code: code, verifier: verifier, redirect: redirect, creds: creds)
-        persist(tok)
+        return try await exchange(code: code, verifier: verifier, redirect: redirect,
+                                  provider: provider, creds: creds)
     }
 
-    // MARK: Token endpoints
+    /// Looks up the account's email (identity) for display + dedupe.
+    static func identity(provider: Provider, token: StoredToken) async -> String {
+        switch provider {
+        case .google:
+            if let e = try? await getJSON("https://www.googleapis.com/oauth2/v3/userinfo",
+                                          token.accessToken)["email"] as? String { return e }
+            if let id = try? await getJSON("https://www.googleapis.com/calendar/v3/calendars/primary",
+                                           token.accessToken)["id"] as? String { return id }
+            return "Google account"
+        case .microsoft:
+            if let j = try? await getJSON("https://graph.microsoft.com/v1.0/me", token.accessToken) {
+                return (j["mail"] as? String) ?? (j["userPrincipalName"] as? String) ?? "Microsoft account"
+            }
+            return "Microsoft account"
+        case .zoom:
+            if let j = try? await getJSON("https://api.zoom.us/v2/users/me", token.accessToken),
+               let e = j["email"] as? String { return e }
+            return "Zoom account"
+        }
+    }
 
-    private func exchange(code: String, verifier: String, redirect: String, creds: Credentials) async throws -> StoredToken {
+    // MARK: - Token endpoints (static)
+
+    private static func exchange(code: String, verifier: String, redirect: String,
+                                 provider: Provider, creds: Credentials) async throws -> StoredToken {
+        let config = provider.oauth
         var body: [String: String] = [
-            "code": code,
-            "redirect_uri": redirect,
-            "grant_type": "authorization_code",
+            "code": code, "redirect_uri": redirect, "grant_type": "authorization_code",
         ]
         if config.usePKCE { body["code_verifier"] = verifier }
         if config.sendScopeOnToken { body["scope"] = config.scopes.joined(separator: " ") }
-        let json = try await postToken(body, creds: creds)
+        let json = try await postToken(body, provider: provider, creds: creds)
         guard let access = json["access_token"] as? String,
               let refresh = json["refresh_token"] as? String else {
             throw AuthError.server("Malformed token response.")
@@ -115,43 +137,38 @@ actor OAuthClient {
                            expiry: Date().addingTimeInterval(expiresIn(json)))
     }
 
-    private func refresh(_ tok: StoredToken, creds: Credentials) async throws -> StoredToken {
-        var body: [String: String] = [
-            "refresh_token": tok.refreshToken,
-            "grant_type": "refresh_token",
-        ]
+    private static func refresh(_ tok: StoredToken, provider: Provider, creds: Credentials) async throws -> StoredToken {
+        let config = provider.oauth
+        var body: [String: String] = ["refresh_token": tok.refreshToken, "grant_type": "refresh_token"]
         if config.sendScopeOnToken { body["scope"] = config.scopes.joined(separator: " ") }
-        let json = try await postToken(body, creds: creds)
+        let json = try await postToken(body, provider: provider, creds: creds)
         guard let access = json["access_token"] as? String else {
             throw AuthError.server("Malformed refresh response.")
         }
-        // Zoom and Microsoft rotate the refresh token; Google keeps it.
-        let newRefresh = (json["refresh_token"] as? String) ?? tok.refreshToken
+        let newRefresh = (json["refresh_token"] as? String) ?? tok.refreshToken   // Zoom/MS rotate
         return StoredToken(accessToken: access, refreshToken: newRefresh,
                            expiry: Date().addingTimeInterval(expiresIn(json)))
     }
 
-    private func expiresIn(_ json: [String: Any]) -> TimeInterval {
+    private static func expiresIn(_ json: [String: Any]) -> TimeInterval {
         (json["expires_in"] as? Double) ?? 3600
     }
 
-    private func postToken(_ fields: [String: String], creds: Credentials) async throws -> [String: Any] {
+    private static func postToken(_ fields: [String: String], provider: Provider, creds: Credentials) async throws -> [String: Any] {
+        let config = provider.oauth
         var fields = fields
         var req = URLRequest(url: URL(string: config.tokenURL)!)
         req.httpMethod = "POST"
         req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-
         switch config.clientAuth {
         case .basicHeader:
-            let secret = creds.clientSecret ?? ""
-            let basic = Data("\(creds.clientID):\(secret)".utf8).base64EncodedString()
+            let basic = Data("\(creds.clientID):\(creds.clientSecret ?? "")".utf8).base64EncodedString()
             req.setValue("Basic \(basic)", forHTTPHeaderField: "Authorization")
         case .body:
             fields["client_id"] = creds.clientID
             if let secret = creds.clientSecret { fields["client_secret"] = secret }
         }
-        req.httpBody = fields.map { "\($0.key)=\(Self.formEncode($0.value))" }
-            .joined(separator: "&").data(using: .utf8)
+        req.httpBody = fields.map { "\($0.key)=\(formEncode($0.value))" }.joined(separator: "&").data(using: .utf8)
 
         let (data, resp) = try await URLSession.shared.data(for: req)
         let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
@@ -164,25 +181,27 @@ actor OAuthClient {
         return json
     }
 
-    private func persist(_ tok: StoredToken) {
-        token = tok
-        if let data = try? JSONEncoder().encode(tok) {
-            Keychain.save(data, account: provider.keychainAccount)
+    private static func getJSON(_ url: String, _ token: String) async throws -> [String: Any] {
+        var req = URLRequest(url: URL(string: url)!)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard let http = resp as? HTTPURLResponse, (200...299).contains(http.statusCode),
+              let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw AuthError.server("identity lookup failed")
         }
+        return json
     }
 
-    // MARK: PKCE helpers
+    // MARK: - PKCE helpers
 
     private static func randomURLSafe(_ n: Int) -> String {
         var bytes = [UInt8](repeating: 0, count: n)
         _ = SecRandomCopyBytes(kSecRandomDefault, n, &bytes)
         return Data(bytes).base64URL()
     }
-
     private static func s256(_ verifier: String) -> String {
         Data(SHA256.hash(data: Data(verifier.utf8))).base64URL()
     }
-
     private static func formEncode(_ s: String) -> String {
         var allowed = CharacterSet.alphanumerics
         allowed.insert(charactersIn: "-._~")

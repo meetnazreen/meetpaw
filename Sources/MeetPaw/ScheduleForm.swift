@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ScheduleForm: View {
     @Bindable var model: AppModel
-    var event: CalendarEvent?            // non-nil → edit mode
+    var editing: AccountEvent?           // non-nil → edit mode
     let onDone: () -> Void
 
     @State private var title: String
@@ -16,10 +16,11 @@ struct ScheduleForm: View {
 
     private let durations = [15, 30, 45, 60]
 
-    init(model: AppModel, event: CalendarEvent? = nil, onDone: @escaping () -> Void) {
+    init(model: AppModel, editing: AccountEvent? = nil, onDone: @escaping () -> Void) {
         self._model = Bindable(wrappedValue: model)
-        self.event = event
+        self.editing = editing
         self.onDone = onDone
+        let event = editing?.event
         _title = State(initialValue: event?.summary ?? "")
         _start = State(initialValue: event?.startDate ?? Self.defaultStart())
         _addMeet = State(initialValue: event?.hasMeet ?? true)
@@ -32,7 +33,7 @@ struct ScheduleForm: View {
         _durationMinutes = State(initialValue: dur)
     }
 
-    private var isEditing: Bool { event != nil }
+    private var isEditing: Bool { editing != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -137,8 +138,8 @@ struct ScheduleForm: View {
         submitting = true
         Task {
             let ok: Bool
-            if let event {
-                ok = await model.updateMeeting(event: event, title: title, start: start,
+            if let editing {
+                ok = await model.updateMeeting(editing, title: title, start: start,
                                                durationMinutes: durationMinutes,
                                                attendees: emails, addMeet: addMeet)
             } else {

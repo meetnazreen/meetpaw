@@ -41,13 +41,14 @@ struct ProviderLogoView: View {
     }
 }
 
-/// Signed-out screen: one button per provider.
+/// Sign-in / add-account screen: one button per provider.
 struct ProviderSignIn: View {
     @Bindable var model: AppModel
+    var title = "Sign in to get started"
 
     var body: some View {
         VStack(spacing: 10) {
-            Text("Sign in to get started")
+            Text(title)
                 .font(.callout).foregroundStyle(.secondary)
                 .padding(.bottom, 2)
             ForEach(Provider.allCases) { provider in
@@ -55,13 +56,15 @@ struct ProviderSignIn: View {
             }
         }
         .padding(16)
+        .disabled(model.signingIn)
+        .opacity(model.signingIn ? 0.6 : 1)
     }
 
     @ViewBuilder
     private func row(_ provider: Provider) -> some View {
         let hasCreds = model.hasCredentials(provider)
         Button {
-            if hasCreds { model.signIn(provider) } else { model.openCredentialsFolder() }
+            if hasCreds { model.addAccount(provider) } else { model.openCredentialsFolder() }
         } label: {
             HStack(spacing: 10) {
                 ProviderLogoView(provider: provider, size: 28)

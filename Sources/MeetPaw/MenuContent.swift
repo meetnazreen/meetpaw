@@ -6,24 +6,34 @@ struct MenuContent: View {
     @State private var showSchedule = false
     @State private var scheduleSession = 0   // bump to reset the form each open
     @State private var showInstant = false   // drawer instant-meeting widget
-    @State private var editingEvent: CalendarEvent?   // non-nil → editing
+    @State private var editingEvent: AccountEvent?    // non-nil → editing
+    @State private var showAddAccount = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider()
-            body(for: model.state)
+            if showAddAccount {
+                addAccountScreen
+            } else {
+                body(for: model.state)
+            }
         }
         .frame(width: 360)
         .tint(.meetpaw)
         .animation(.spring(duration: 0.3), value: model.createdLink)
     }
 
-    private var isSignedIn: Bool {
-        switch model.state {
-        case .signedOut, .needsCredentials: return false
-        default: return true
+    private var addAccountScreen: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button { showAddAccount = false } label: {
+                Label("Back", systemImage: "chevron.left")
+            }
+            .buttonStyle(.plain).foregroundStyle(.secondary)
+            .padding(.horizontal, 12).padding(.top, 10)
+            ProviderSignIn(model: model, title: "Add an account")
         }
+        .onChange(of: model.accounts) { _, _ in showAddAccount = false }
     }
 
     // MARK: Header
@@ -37,52 +47,90 @@ struct MenuContent: View {
             }
             Text("MeetPaw").font(.headline)
             Spacer()
-            Menu {
-                if model.isSignedIn {
-                    Button { Task { await model.refresh() } } label: {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                    }
-                }
-                // Default provider for instant meetings.
-                if model.signedIn.count > 1 {
-                    Picker("Default for instant meeting", selection: Binding(
-                        get: { model.defaultProvider }, set: { model.defaultProvider = $0 })) {
-                        ForEach(Provider.allCases.filter { model.isSignedIn($0) }) { p in
-                            Text(p.name).tag(p)
-                        }
-                    }
-                }
-                Toggle(isOn: $model.launchAtLogin) {
-                    Label("Launch at login", systemImage: "power")
-                }
-                Divider()
-                // Per-provider connect / sign out.
-                ForEach(Provider.allCases) { p in
-                    if model.isSignedIn(p) {
-                        Button(role: .destructive) { model.signOut(p) } label: {
-                            Label("Sign out of \(p.name)", systemImage: "rectangle.portrait.and.arrow.right")
-                        }
-                    } else if model.hasCredentials(p) {
-                        Button { model.signIn(p) } label: {
-                            Label("Sign in with \(p.name)", systemImage: "plus.circle")
-                        }
-                    }
-                }
-                Divider()
-                Button { NSApp.terminate(nil) } label: {
-                    Label("Quit MeetPaw", systemImage: "xmark.circle")
-                }
-            } label: {
-                Image(systemName: "line.3.horizontal")
-                    .foregroundStyle(.secondary)
-            }
-            .menuStyle(.borderlessButton)
-            .buttonStyle(.plain)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help("Menu")
+            if model.isSignedIn { accountDropdown }
+            hamburger
         }
         .padding(12)
+    }
+
+    // Account filter: All accounts + each account by email.
+    private var accountDropdown: some View {
+        Menu {
+            Button { model.selectedAccountID = nil } label: {
+                Label("All accounts", systemImage: model.selectedAccountID == nil ? "checkmark" : "")
+            }
+            Divider()
+            ForEach(model.accounts) { account in
+                Button { model.selectedAccountID = account.id } label: {
+                    Label(account.email,
+                          systemImage: model.selectedAccountID == account.id ? "checkmark" : "")
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(selectedLabel).lineLimit(1).font(.callout)
+                Image(systemName: "chevron.down").font(.caption2)
+            }
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: 140)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+    }
+
+    private var selectedLabel: String {
+        guard let sel = model.selectedAccountID,
+              let a = model.accounts.first(where: { $0.id == sel }) else { return "All accounts" }
+        return a.shortEmail
+    }
+
+    private var hamburger: some View {
+        Menu {
+            if model.isSignedIn {
+                Button { Task { await model.refresh() } } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+            }
+            // Default account (its provider) for new instant meetings.
+            if model.accounts.count > 1 {
+                Picker("Default for new meeting", selection: Binding(
+                    get: { model.defaultAccountID ?? model.accounts.first?.id ?? "" },
+                    set: { model.defaultAccountID = $0 })) {
+                    ForEach(model.accounts) { a in
+                        Text("\(a.provider.name) · \(a.shortEmail)").tag(a.id)
+                    }
+                }
+            }
+            Toggle(isOn: $model.launchAtLogin) {
+                Label("Launch at login", systemImage: "power")
+            }
+            if !model.accounts.isEmpty {
+                Divider()
+                Text("Accounts")
+                ForEach(model.accounts) { a in
+                    Button(role: .destructive) { model.signOut(a) } label: {
+                        Label("Sign out \(a.provider.name) · \(a.shortEmail)",
+                              systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                }
+            }
+            Divider()
+            Button { showAddAccount = true } label: {
+                Label("Add account…", systemImage: "plus.circle")
+            }
+            Divider()
+            Button { NSApp.terminate(nil) } label: {
+                Label("Quit MeetPaw", systemImage: "xmark.circle")
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal").foregroundStyle(.secondary)
+        }
+        .menuStyle(.borderlessButton)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Menu")
     }
 
     // MARK: State-driven body
@@ -90,7 +138,7 @@ struct MenuContent: View {
     @ViewBuilder
     private func body(for state: AppModel.State) -> some View {
         switch state {
-        case .needsCredentials, .signedOut:
+        case .signedOut:
             ProviderSignIn(model: model)
         case .loading:
             HStack { ProgressView().controlSize(.small); Text("Loading…") }
@@ -144,7 +192,7 @@ struct MenuContent: View {
 
             ZStack(alignment: .top) {
                 if showSchedule || editingEvent != nil {
-                    ScheduleForm(model: model, event: editingEvent) {
+                    ScheduleForm(model: model, editing: editingEvent) {
                         showSchedule = false; editingEvent = nil
                     }
                     .id(scheduleSession)   // new identity each open → reset state
@@ -162,7 +210,8 @@ struct MenuContent: View {
 
     @ViewBuilder
     private var upcoming: some View {
-        if model.meetings.isEmpty {
+        let items = model.visibleMeetings
+        if items.isEmpty {
             Text("No upcoming meetings in the next 24 hours.")
                 .font(.callout).foregroundStyle(.secondary)
                 .padding(.horizontal, 12).padding(.bottom, 12)
@@ -172,11 +221,12 @@ struct MenuContent: View {
                     .padding(.horizontal, 12)
                 ScrollView {
                     VStack(spacing: 0) {
-                        ForEach(model.meetings) { event in
-                            SwipeToDelete(onDelete: { model.deleteEvent(event) }) {
-                                MeetingRow(event: event,
-                                           join: { model.join(event) },
-                                           edit: { scheduleSession += 1; editingEvent = event })
+                        ForEach(items) { item in
+                            SwipeToDelete(onDelete: { model.deleteEvent(item) }) {
+                                MeetingRow(item: item,
+                                           showAccount: model.selectedAccountID == nil && model.accounts.count > 1,
+                                           join: { model.join(item) },
+                                           edit: { scheduleSession += 1; editingEvent = item })
                             }
                         }
                     }
@@ -202,10 +252,13 @@ struct MenuContent: View {
 }
 
 struct MeetingRow: View {
-    let event: CalendarEvent
+    let item: AccountEvent
+    var showAccount = false
     let join: () -> Void
     let edit: () -> Void
     @State private var hovering = false
+
+    private var event: CalendarEvent { item.event }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -215,7 +268,13 @@ struct MeetingRow: View {
                 .frame(width: 18)
             VStack(alignment: .leading, spacing: 2) {
                 Text(event.summary ?? "(No title)").lineLimit(1)
-                Text(timeLabel).font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Text(timeLabel)
+                    if showAccount {
+                        Text("· \(item.account.shortEmail)").lineLimit(1)
+                    }
+                }
+                .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
             Button(action: edit) {

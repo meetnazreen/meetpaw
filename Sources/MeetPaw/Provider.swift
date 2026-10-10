@@ -1,7 +1,7 @@
 import Foundation
 
 /// A meeting provider MeetPaw can sign into.
-enum Provider: String, CaseIterable, Identifiable {
+enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
     case google, zoom, microsoft
     var id: String { rawValue }
 
@@ -45,11 +45,12 @@ enum Provider: String, CaseIterable, Identifiable {
             return OAuthConfig(
                 authURL: "https://accounts.google.com/o/oauth2/v2/auth",
                 tokenURL: "https://oauth2.googleapis.com/token",
-                scopes: ["https://www.googleapis.com/auth/calendar.events",
+                scopes: ["openid", "email",
+                         "https://www.googleapis.com/auth/calendar.events",
                          "https://www.googleapis.com/auth/meetings.space.created"],
                 redirectHost: "127.0.0.1", fixedPort: nil, usePKCE: true,
                 clientAuth: .body, sendScopeOnToken: false,
-                extraAuthParams: ["access_type": "offline", "prompt": "consent"])
+                extraAuthParams: ["access_type": "offline", "prompt": "select_account consent"])
         case .zoom:
             return OAuthConfig(
                 authURL: "https://zoom.us/oauth/authorize",
@@ -68,7 +69,7 @@ enum Provider: String, CaseIterable, Identifiable {
                 scopes: ["OnlineMeetings.ReadWrite", "Calendars.ReadWrite", "offline_access", "User.Read"],
                 redirectHost: "localhost", fixedPort: nil, usePKCE: true,
                 clientAuth: .body, sendScopeOnToken: true,
-                extraAuthParams: [:])
+                extraAuthParams: ["prompt": "select_account"])
         }
     }
 }
