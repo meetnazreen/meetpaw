@@ -72,6 +72,14 @@ struct MenuContent: View {
         .buttonStyle(.plain)
     }
 
+    private func shortcutText(_ p: Provider) -> String {
+        switch p {        // ⇧⌘ + letter, native glyphs
+        case .google: return "⇧⌘M"
+        case .zoom: return "⇧⌘Z"
+        case .microsoft: return "⇧⌘T"
+        }
+    }
+
     private var selectedLabel: String {
         guard let sel = model.selectedAccountID,
               let a = model.accounts.first(where: { $0.id == sel }) else { return "All accounts" }
@@ -106,7 +114,8 @@ struct MenuContent: View {
                     get: { model.defaultProvider },
                     set: { model.setDefaultProvider($0) })) {
                     ForEach(model.signedProviders) { p in
-                        Label { Text(p.name) } icon: { ProviderLogo.menuIcon(p) }.tag(p)
+                        Label { Text("\(p.name)   \(shortcutText(p))") }
+                            icon: { ProviderLogo.menuIcon(p) }.tag(p)
                     }
                 } label: {
                     Text("Default meeting provider")
