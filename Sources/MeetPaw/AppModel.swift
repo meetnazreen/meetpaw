@@ -202,15 +202,24 @@ final class AppModel {
         return accounts.first { $0.provider == .google }
     }
 
-    func scheduleMeeting(title: String, start: Date, durationMinutes: Int,
+    /// Account preselected in the schedule form: the header-selected one, else default.
+    var formAccount: Account? {
+        if let sel = selectedAccountID, let a = accounts.first(where: { $0.id == sel }) { return a }
+        return defaultAccount
+    }
+
+    func scheduleMeeting(on account: Account, title: String, start: Date, durationMinutes: Int,
                          attendees: [String], addMeet: Bool) async -> Bool {
-        guard let account = scheduleAccount, let client = clients[account.id] else {
-            state = .error("Connect a Google account to schedule."); return false
-        }
+        guard let client = clients[account.id] else { return false }
         do {
-            let end = start.addingTimeInterval(TimeInterval(durationMinutes * 60))
-            try await GoogleAPI(auth: client).createEvent(title: title, start: start, end: end,
-                                                          attendees: attendees, addMeet: addMeet)
+            if account.provider == .google {
+                let end = start.addingTimeInterval(TimeInterval(durationMinutes * 60))
+                try await GoogleAPI(auth: client).createEvent(title: title, start: start, end: end,
+                                                              attendees: attendees, addMeet: addMeet)
+            } else {
+                try await ProviderAPI(auth: client).createScheduled(title: title, start: start,
+                                                    durationMinutes: durationMinutes, attendees: attendees)
+            }
             await refresh()
             return true
         } catch {

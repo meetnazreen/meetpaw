@@ -13,6 +13,7 @@ struct ScheduleForm: View {
     @State private var emailDraft = ""
     @State private var emailInvalid = false
     @State private var submitting = false
+    @State private var account: Account?
 
     private let durations = [15, 30, 45, 60]
 
@@ -20,6 +21,7 @@ struct ScheduleForm: View {
         self._model = Bindable(wrappedValue: model)
         self.editing = editing
         self.onDone = onDone
+        _account = State(initialValue: editing?.account ?? model.formAccount ?? model.accounts.first)
         let event = editing?.event
         _title = State(initialValue: event?.summary ?? "")
         _start = State(initialValue: event?.startDate ?? Self.defaultStart())
@@ -37,6 +39,9 @@ struct ScheduleForm: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Which account (and provider) to create under.
+            labeled("Account") { accountField }
+
             TextField("Meeting title", text: $title)
                 .textFieldStyle(.plain)
                 .glassField()
@@ -88,8 +93,14 @@ struct ScheduleForm: View {
                 }
             }
 
-            Toggle(isOn: $addMeet) {
-                Label("Add Google Meet link", systemImage: "video")
+            // Google lets you opt out of a Meet link; Zoom/Teams always include one.
+            if account?.provider == .google {
+                Toggle(isOn: $addMeet) {
+                    Label("Add Google Meet link", systemImage: "video")
+                }
+            } else if let p = account?.provider {
+                Label("A \(p.name) link will be added", systemImage: "video")
+                    .font(.callout).foregroundStyle(.secondary)
             }
 
             HStack(spacing: 14) {
@@ -109,6 +120,34 @@ struct ScheduleForm: View {
         .padding(14)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 12).padding(.bottom, 12)
+    }
+
+    @ViewBuilder
+    private var accountField: some View {
+        if isEditing, let a = account {
+            // Account is fixed when editing an existing event.
+            HStack(spacing: 8) {
+                ProviderLogoView(provider: a.provider, size: 18)
+                Text(a.email).lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .glassField()
+        } else {
+            Menu {
+                ForEach(model.accounts) { a in
+                    Button { account = a } label: { Text("\(a.provider.name) · \(a.email)") }
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    if let a = account { ProviderLogoView(provider: a.provider, size: 18) }
+                    Text(account?.email ?? "Select account").lineLimit(1)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.up.chevron.down").font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+            .menuStyle(.borderlessButton).menuIndicator(.hidden).buttonStyle(.plain)
+            .glassField()
+        }
     }
 
     @ViewBuilder
@@ -142,10 +181,12 @@ struct ScheduleForm: View {
                 ok = await model.updateMeeting(editing, title: title, start: start,
                                                durationMinutes: durationMinutes,
                                                attendees: emails, addMeet: addMeet)
-            } else {
-                ok = await model.scheduleMeeting(title: title, start: start,
+            } else if let account {
+                ok = await model.scheduleMeeting(on: account, title: title, start: start,
                                                  durationMinutes: durationMinutes,
                                                  attendees: emails, addMeet: addMeet)
+            } else {
+                ok = false
             }
             submitting = false
             if ok { onDone() }
