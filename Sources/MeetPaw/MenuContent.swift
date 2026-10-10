@@ -208,14 +208,31 @@ struct MenuContent: View {
     }
 
     @ViewBuilder
+    private var accountErrorBanner: some View {
+        if !model.accountErrors.isEmpty {
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(model.accounts.filter { model.accountErrors[$0.id] != nil }) { a in
+                    Text("⚠️ \(a.provider.name): \((model.accountErrors[a.id] ?? "").prefix(90))")
+                        .font(.caption2).foregroundStyle(.orange).lineLimit(2)
+                }
+            }
+            .padding(.horizontal, 12).padding(.bottom, 6)
+        }
+    }
+
+    @ViewBuilder
     private var upcoming: some View {
         let items = model.visibleMeetings
         if items.isEmpty {
-            Text("No upcoming meetings in the next 24 hours.")
-                .font(.callout).foregroundStyle(.secondary)
-                .padding(.horizontal, 12).padding(.bottom, 12)
+            VStack(alignment: .leading, spacing: 0) {
+                accountErrorBanner
+                Text("No upcoming meetings in the next 24 hours.")
+                    .font(.callout).foregroundStyle(.secondary)
+                    .padding(.horizontal, 12).padding(.bottom, 12)
+            }
         } else {
             VStack(alignment: .leading, spacing: 0) {
+                accountErrorBanner
                 Text("UPCOMING").font(.caption2).foregroundStyle(.secondary)
                     .padding(.horizontal, 12)
                 ScrollView {

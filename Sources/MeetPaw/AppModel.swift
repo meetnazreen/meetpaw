@@ -11,6 +11,7 @@ final class AppModel {
     private(set) var state: State = .signedOut
     private(set) var meetings: [AccountEvent] = []       // merged across accounts
     private(set) var accounts: [Account] = []
+    private(set) var accountErrors: [String: String] = [:]   // account.id → fetch error
     private(set) var createdLink: URL?
     private(set) var createdProvider: Provider?
     private(set) var creatingLink = false
@@ -166,9 +167,11 @@ final class AppModel {
         guard !accounts.isEmpty else { meetings = []; state = .signedOut; return }
         if case .ready = state {} else { state = .loading }
 
+        struct Fetched { let account: Account; let events: [AccountEvent]; let error: String? }
         let pairs = accounts.compactMap { a in clients[a.id].map { (a, $0) } }
         var all: [AccountEvent] = []
-        await withTaskGroup(of: [AccountEvent].self) { group in
+        var errors: [String: String] = [:]
+        await withTaskGroup(of: Fetched.self) { group in
             for (account, client) in pairs {
                 group.addTask {
                     do {
@@ -178,12 +181,21 @@ final class AppModel {
                         } else {
                             events = try await ProviderAPI(auth: client).upcomingMeetings()
                         }
-                        return events.map { AccountEvent(account: account, event: $0) }
-                    } catch { return [] }   // one account/provider failing must not drop others
+                        return Fetched(account: account,
+                                       events: events.map { AccountEvent(account: account, event: $0) },
+                                       error: nil)
+                    } catch {
+                        let msg = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                        return Fetched(account: account, events: [], error: msg)
+                    }
                 }
             }
-            for await part in group { all += part }
+            for await part in group {
+                all += part.events
+                if let e = part.error { errors[part.account.id] = e }
+            }
         }
+        accountErrors = errors
         all.sort { ($0.event.startDate ?? .distantFuture) < ($1.event.startDate ?? .distantFuture) }
         meetings = all
         Notifier.shared.schedule(all.map(\.event))

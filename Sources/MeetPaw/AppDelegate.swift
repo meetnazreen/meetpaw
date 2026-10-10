@@ -72,12 +72,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !popover.isShown {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
-        // Make the popover key so a transient popover dismisses on outside click,
-        // but clear first responder so no control shows a blue focus highlight.
-        if let window = popover.contentViewController?.view.window {
-            window.makeKey()
-            window.makeFirstResponder(nil)
-        }
+        // Key so the transient popover dismisses on outside click and text
+        // fields accept input.
+        popover.contentViewController?.view.window?.makeKey()
     }
 
     // MARK: Menu-bar paw-walk (animate the status item image itself)
