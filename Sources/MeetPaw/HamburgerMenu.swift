@@ -44,7 +44,8 @@ struct HamburgerMenu: NSViewRepresentable {
 
         private func build() -> NSMenu {
             let menu = NSMenu()
-            let add = item("Add account…", symbol: "plus.circle.fill", accent: true) { [self] in onAddAccount() }
+            menu.minimumWidth = 330
+            let add = item("Add account…", symbol: "plus", accent: true) { [self] in onAddAccount() }
             menu.addItem(add)
             if model.isSignedIn {
                 menu.addItem(item("Refresh", symbol: "arrow.clockwise") { [self] in Task { await model.refresh() } })
@@ -65,8 +66,8 @@ struct HamburgerMenu: NSViewRepresentable {
                 for p in model.signedProviders {
                     let it = item(p.name, image: ProviderLogo.avatarImage(p, size: 16)) { [self] in model.setDefaultProvider(p) }
                     it.state = model.defaultProvider == p ? .on : .off
-                    it.keyEquivalent = key(for: p)
-                    it.keyEquivalentModifierMask = [.command, .shift]   // renders ⇧⌘<key>, right-aligned
+                    // Custom ⌘-first shortcut text, right-aligned + muted (per request).
+                    it.attributedTitle = shortcutTitle(p.name, shortcut: shortcut(for: p))
                     menu.addItem(it)
                 }
             }
@@ -103,12 +104,25 @@ struct HamburgerMenu: NSViewRepresentable {
             return it
         }
 
-        private func key(for p: Provider) -> String {
-            switch p {
-            case .google: return "m"
-            case .zoom: return "z"
-            case .microsoft: return "t"
+        private func shortcut(for p: Provider) -> String {
+            switch p {        // ⌘ first, per request
+            case .google: return "⌘⇧M"
+            case .zoom: return "⌘⇧Z"
+            case .microsoft: return "⌘⇧T"
             }
+        }
+
+        /// "name" left, shortcut right-aligned (muted) via a right tab stop.
+        private func shortcutTitle(_ name: String, shortcut: String) -> NSAttributedString {
+            let font = NSFont.menuFont(ofSize: 0)
+            let para = NSMutableParagraphStyle()
+            para.tabStops = [NSTextTab(textAlignment: .right, location: 275)]
+            let s = NSMutableAttributedString(string: name + "\t", attributes: [.font: font])
+            s.append(NSAttributedString(string: shortcut, attributes: [
+                .font: font, .foregroundColor: NSColor.tertiaryLabelColor,
+            ]))
+            s.addAttribute(.paragraphStyle, value: para, range: NSRange(location: 0, length: s.length))
+            return s
         }
     }
 }
