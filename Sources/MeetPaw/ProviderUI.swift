@@ -140,11 +140,14 @@ struct ProviderSignIn: View {
     @Bindable var model: AppModel
     var title = "Sign in to get started"
 
+    var subtitle = "Connect Google, Zoom, or Microsoft Teams to start and join meetings."
+
     var body: some View {
-        VStack(spacing: 10) {
-            Text(title)
-                .font(.callout).foregroundStyle(.secondary)
-                .padding(.bottom, 2)
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.headline)
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+            }
             ForEach(Provider.allCases) { provider in
                 row(provider)
             }
@@ -161,13 +164,19 @@ struct ProviderSignIn: View {
         Button {
             if hasCreds { model.addAccount(provider) } else { model.openCredentialsFolder() }
         } label: {
-            HStack(spacing: 10) {
-                ProviderLogoView(provider: provider, size: 28, resource: provider.signInLogoResource)
-                Text(atCap ? "\(provider.signInName) — max \(AppModel.maxAccountsPerProvider) accounts"
-                     : hasCreds ? "Sign in with \(provider.signInName)"
-                     : "Add \(provider.signInName) credentials…")
-                    .fontWeight(.medium)
-                Spacer()
+            HStack(spacing: 12) {
+                ProviderLogoView(provider: provider, size: 34, resource: provider.signInLogoResource)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(atCap ? "\(provider.signInName) — max \(AppModel.maxAccountsPerProvider) accounts"
+                         : hasCreds ? "Sign in with \(provider.signInName)"
+                         : "Add \(provider.signInName) credentials…")
+                        .fontWeight(.medium)
+                    Text(hasCreds ? provider.signInBlurb
+                         : "Add your \(provider.signInName) OAuth credentials to connect.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
                 if !hasCreds { Image(systemName: "folder").foregroundStyle(.secondary) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

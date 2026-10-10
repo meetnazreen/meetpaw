@@ -50,6 +50,15 @@ enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
         }
     }
 
+    /// Two-line description shown under each sign-in row.
+    var signInBlurb: String {
+        switch self {
+        case .google: return "Create Google Meet links, and view, schedule & join your Google Calendar meetings."
+        case .zoom: return "Start instant or scheduled Zoom meetings and manage them from the menu bar."
+        case .microsoft: return "Create Teams meetings and sync your Outlook calendar."
+        }
+    }
+
     var keychainAccount: String { rawValue }
     var credentialsFile: String {
         switch self {
