@@ -21,14 +21,23 @@ struct ScheduleForm: View {
                 .textFieldStyle(.plain)
                 .glassField()
 
-            // Native macOS date + time pickers.
-            DatePicker("Starts", selection: $start, displayedComponents: [.date, .hourAndMinute])
-                .datePickerStyle(.compact)
-
-            Picker("Duration", selection: $durationMinutes) {
-                ForEach(durations, id: \.self) { Text("\($0) min").tag($0) }
+            // Native macOS date + time pickers, labels above for breathing room.
+            HStack(alignment: .bottom, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Starts").font(.caption).foregroundStyle(.secondary)
+                    DatePicker("", selection: $start, displayedComponents: [.date, .hourAndMinute])
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Duration").font(.caption).foregroundStyle(.secondary)
+                    Picker("", selection: $durationMinutes) {
+                        ForEach(durations, id: \.self) { Text("\($0) min").tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                }
             }
-            .pickerStyle(.menu)
 
             // Attendees as chips.
             VStack(alignment: .leading, spacing: 6) {
