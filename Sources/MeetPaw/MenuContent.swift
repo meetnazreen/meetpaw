@@ -115,18 +115,17 @@ struct MenuContent: View {
             .disabled(model.creatingLink)
             .padding(.horizontal, 12).padding(.top, 12)
 
-            Button { withAnimation { showSchedule.toggle() } } label: {
+            Button { withAnimation(.easeInOut) { showSchedule.toggle() } } label: {
                 Label("Schedule meeting", systemImage: "calendar.badge.plus")
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.bordered).tint(.secondary)
             .padding(.horizontal, 12).padding(.vertical, 8)
 
             if showSchedule {
-                ScheduleForm(model: model) { withAnimation { showSchedule = false } }
-            }
-
-            if model.meetings.isEmpty {
+                ScheduleForm(model: model) { withAnimation(.easeInOut) { showSchedule = false } }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            } else if model.meetings.isEmpty {
                 Text("No upcoming meetings in the next 24 hours.")
                     .font(.callout).foregroundStyle(.secondary)
                     .padding(.horizontal, 12).padding(.bottom, 12)
@@ -143,6 +142,7 @@ struct MenuContent: View {
                 .frame(maxHeight: 280)
             }
         }
+        .animation(.easeInOut(duration: 0.25), value: showSchedule)
     }
 
     // MARK: Helpers

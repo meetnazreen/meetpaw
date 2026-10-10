@@ -16,9 +16,10 @@ struct ScheduleForm: View {
     private let durations = [15, 30, 45, 60]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             TextField("Meeting title", text: $title)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(.plain)
+                .glassField()
 
             // Native macOS date + time pickers.
             DatePicker("Starts", selection: $start, displayedComponents: [.date, .hourAndMinute])
@@ -35,7 +36,8 @@ struct ScheduleForm: View {
                     ChipFlow(emails: emails) { remove($0) }
                 }
                 TextField("Add guest email, press return", text: $emailDraft)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
+                    .glassField()
                     .onSubmit(addEmail)
                 if emailInvalid {
                     Text("Enter a valid email address.")
@@ -46,23 +48,22 @@ struct ScheduleForm: View {
             Toggle(isOn: $addMeet) {
                 Label("Add Google Meet link", systemImage: "video")
             }
-            .controlSize(.small)
 
-            HStack(spacing: 8) {
+            HStack(spacing: 14) {
+                Spacer()
                 Button("Cancel", role: .cancel) { onDone() }
-                    .buttonStyle(.bordered).tint(.secondary)
-                    .frame(maxWidth: .infinity)
+                    .buttonStyle(.plain).foregroundStyle(.secondary)
                 Button(action: submit) {
                     if submitting { ProgressView().controlSize(.small) }
                     else { Text("Schedule") }
                 }
                 .buttonStyle(.borderedProminent).tint(.meetpaw)
-                .frame(maxWidth: .infinity)
                 .disabled(title.isEmpty || submitting)
             }
             .controlSize(.large)
         }
-        .padding(12)
+        .controlSize(.large)
+        .padding(14)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 12).padding(.bottom, 12)
     }
@@ -105,6 +106,21 @@ struct ScheduleForm: View {
         let minute = cal.component(.minute, from: now)
         let rounded = (minute / 15 + 1) * 15
         return cal.date(bySetting: .minute, value: rounded % 60, of: now) ?? now
+    }
+}
+
+extension View {
+    /// A taller text field with a Liquid Glass background (material fallback).
+    @ViewBuilder
+    func glassField() -> some View {
+        let shape = RoundedRectangle(cornerRadius: 9)
+        let padded = self.padding(.horizontal, 10).padding(.vertical, 8)
+        if #available(macOS 26.0, *) {
+            padded.glassEffect(.regular, in: shape)
+        } else {
+            padded.background(.regularMaterial, in: shape)
+                .overlay(shape.strokeBorder(.quaternary))
+        }
     }
 }
 
