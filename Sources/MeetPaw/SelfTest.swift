@@ -33,6 +33,14 @@ enum SelfTest {
         // timed event without fractional seconds parses.
         assert(events[0].startDate != nil, "non-fractional dateTime failed to parse")
 
+        // Provider instant-meeting responses decode to a join URL.
+        let zoom = try! JSONDecoder().decode(ZoomMeeting.self,
+            from: Data(#"{"join_url":"https://zoom.us/j/123"}"#.utf8))
+        assert(zoom.joinURL == "https://zoom.us/j/123", "zoom join_url decode")
+        let teams = try! JSONDecoder().decode(TeamsMeeting.self,
+            from: Data(#"{"joinWebUrl":"https://teams.microsoft.com/l/x"}"#.utf8))
+        assert(teams.joinWebUrl == "https://teams.microsoft.com/l/x", "teams joinWebUrl decode")
+
         print("✅ SelfTest passed")
     }
 }

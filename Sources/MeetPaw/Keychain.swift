@@ -1,12 +1,11 @@
 import Foundation
 import Security
 
-/// Minimal Keychain generic-password store for the OAuth token blob.
+/// Minimal Keychain generic-password store, keyed per provider account.
 enum Keychain {
     static let service = "com.meetpaw.tokens"
-    static let account = "google"
 
-    static func save(_ data: Data) {
+    static func save(_ data: Data, account: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -18,7 +17,7 @@ enum Keychain {
         SecItemAdd(add as CFDictionary, nil)
     }
 
-    static func load() -> Data? {
+    static func load(account: String) -> Data? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -31,7 +30,7 @@ enum Keychain {
         return result as? Data
     }
 
-    static func clear() {
+    static func clear(account: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

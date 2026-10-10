@@ -17,40 +17,37 @@ enum AuthError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noCredentials: return "Add Google credentials first."
+        case .noCredentials: return "Add credentials first."
         case .invalidGrant:  return "Session expired. Please sign in again."
         case .server(let m): return m
         }
     }
 }
 
-/// OAuth 2.0 installed-app flow with PKCE + loopback redirect.
-actor GoogleAuth {
-    // calendar.events (read+write) rather than readonly: the instant-meeting
-    // fallback (events.insert) needs write access when the Meet API 403s.
-    static let scopes = [
-        "https://www.googleapis.com/auth/calendar.events",
-        "https://www.googleapis.com/auth/meetings.space.created",
-    ]
-
+/// Provider-agnostic OAuth 2.0 installed-app flow (PKCE + loopback redirect).
+actor OAuthClient {
+    let provider: Provider
+    private let config: OAuthConfig
     private var token: StoredToken?
 
-    init() {
-        if let data = Keychain.load() {
+    init(_ provider: Provider) {
+        self.provider = provider
+        self.config = provider.oauth
+        if let data = Keychain.load(account: provider.keychainAccount) {
             token = try? JSONDecoder().decode(StoredToken.self, from: data)
         }
     }
 
     var isSignedIn: Bool { token != nil }
+    var hasCredentials: Bool { Credentials.load(provider) != nil }
 
     func signOut() {
         token = nil
-        Keychain.clear()
+        Keychain.clear(account: provider.keychainAccount)
     }
 
-    /// Returns a valid access token, refreshing if needed.
     func accessToken() async throws -> String {
-        guard let creds = Credentials.load() else { throw AuthError.noCredentials }
+        guard let creds = Credentials.load(provider) else { throw AuthError.noCredentials }
         guard var tok = token else { throw AuthError.invalidGrant }
         if tok.isExpired {
             tok = try await refresh(tok, creds: creds)
@@ -62,28 +59,30 @@ actor GoogleAuth {
     // MARK: Sign in
 
     func signIn() async throws {
-        guard let creds = Credentials.load() else { throw AuthError.noCredentials }
+        guard let creds = Credentials.load(provider) else { throw AuthError.noCredentials }
 
         let verifier = Self.randomURLSafe(64)
         let challenge = Self.s256(verifier)
         let state = Self.randomURLSafe(16)
 
-        let listener = try LoopbackListener()
+        let listener = try LoopbackListener(port: config.fixedPort)
         let port = try await listener.start()
-        let redirect = "http://127.0.0.1:\(port)"
+        let redirect = "http://\(config.redirectHost):\(port)"
 
-        var comps = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
-        comps.queryItems = [
+        var comps = URLComponents(string: config.authURL)!
+        var items: [URLQueryItem] = [
             .init(name: "client_id", value: creds.clientID),
             .init(name: "redirect_uri", value: redirect),
             .init(name: "response_type", value: "code"),
-            .init(name: "scope", value: Self.scopes.joined(separator: " ")),
-            .init(name: "code_challenge", value: challenge),
-            .init(name: "code_challenge_method", value: "S256"),
+            .init(name: "scope", value: config.scopes.joined(separator: " ")),
             .init(name: "state", value: state),
-            .init(name: "access_type", value: "offline"),
-            .init(name: "prompt", value: "consent"),
         ]
+        if config.usePKCE {
+            items.append(.init(name: "code_challenge", value: challenge))
+            items.append(.init(name: "code_challenge_method", value: "S256"))
+        }
+        for (k, v) in config.extraAuthParams { items.append(.init(name: k, value: v)) }
+        comps.queryItems = items
         NSWorkspace.shared.open(comps.url!)
 
         let callback = try await listener.waitForCallback()
@@ -99,59 +98,76 @@ actor GoogleAuth {
     // MARK: Token endpoints
 
     private func exchange(code: String, verifier: String, redirect: String, creds: Credentials) async throws -> StoredToken {
-        let body = [
+        var body: [String: String] = [
             "code": code,
-            "client_id": creds.clientID,
-            "client_secret": creds.clientSecret,
             "redirect_uri": redirect,
             "grant_type": "authorization_code",
-            "code_verifier": verifier,
         ]
-        let json = try await postToken(body)
+        if config.usePKCE { body["code_verifier"] = verifier }
+        if config.sendScopeOnToken { body["scope"] = config.scopes.joined(separator: " ") }
+        let json = try await postToken(body, creds: creds)
         guard let access = json["access_token"] as? String,
-              let refresh = json["refresh_token"] as? String,
-              let expiresIn = json["expires_in"] as? Double else {
+              let refresh = json["refresh_token"] as? String else {
             throw AuthError.server("Malformed token response.")
         }
         return StoredToken(accessToken: access, refreshToken: refresh,
-                           expiry: Date().addingTimeInterval(expiresIn))
+                           expiry: Date().addingTimeInterval(expiresIn(json)))
     }
 
     private func refresh(_ tok: StoredToken, creds: Credentials) async throws -> StoredToken {
-        let body = [
-            "client_id": creds.clientID,
-            "client_secret": creds.clientSecret,
+        var body: [String: String] = [
             "refresh_token": tok.refreshToken,
             "grant_type": "refresh_token",
         ]
-        let json = try await postToken(body)
-        guard let access = json["access_token"] as? String,
-              let expiresIn = json["expires_in"] as? Double else {
+        if config.sendScopeOnToken { body["scope"] = config.scopes.joined(separator: " ") }
+        let json = try await postToken(body, creds: creds)
+        guard let access = json["access_token"] as? String else {
             throw AuthError.server("Malformed refresh response.")
         }
-        // Google keeps the same refresh token on refresh.
-        return StoredToken(accessToken: access, refreshToken: tok.refreshToken,
-                           expiry: Date().addingTimeInterval(expiresIn))
+        // Zoom and Microsoft rotate the refresh token; Google keeps it.
+        let newRefresh = (json["refresh_token"] as? String) ?? tok.refreshToken
+        return StoredToken(accessToken: access, refreshToken: newRefresh,
+                           expiry: Date().addingTimeInterval(expiresIn(json)))
     }
 
-    private func postToken(_ fields: [String: String]) async throws -> [String: Any] {
-        var req = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
+    private func expiresIn(_ json: [String: Any]) -> TimeInterval {
+        (json["expires_in"] as? Double) ?? 3600
+    }
+
+    private func postToken(_ fields: [String: String], creds: Credentials) async throws -> [String: Any] {
+        var fields = fields
+        var req = URLRequest(url: URL(string: config.tokenURL)!)
         req.httpMethod = "POST"
         req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        req.httpBody = fields.map { "\($0.key)=\(Self.formEncode($0.value))" }.joined(separator: "&").data(using: .utf8)
+
+        switch config.clientAuth {
+        case .basicHeader:
+            let secret = creds.clientSecret ?? ""
+            let basic = Data("\(creds.clientID):\(secret)".utf8).base64EncodedString()
+            req.setValue("Basic \(basic)", forHTTPHeaderField: "Authorization")
+        case .body:
+            fields["client_id"] = creds.clientID
+            if let secret = creds.clientSecret { fields["client_secret"] = secret }
+        }
+        req.httpBody = fields.map { "\($0.key)=\(Self.formEncode($0.value))" }
+            .joined(separator: "&").data(using: .utf8)
 
         let (data, resp) = try await URLSession.shared.data(for: req)
         let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
         if let http = resp as? HTTPURLResponse, http.statusCode != 200 {
             if (json["error"] as? String) == "invalid_grant" { throw AuthError.invalidGrant }
-            throw AuthError.server(json["error_description"] as? String ?? "Token request failed (\(http.statusCode)).")
+            throw AuthError.server(json["error_description"] as? String
+                                   ?? json["error"] as? String
+                                   ?? "Token request failed (\(http.statusCode)).")
         }
         return json
     }
 
     private func persist(_ tok: StoredToken) {
         token = tok
-        if let data = try? JSONEncoder().encode(tok) { Keychain.save(data) }
+        if let data = try? JSONEncoder().encode(tok) {
+            Keychain.save(data, account: provider.keychainAccount)
+        }
     }
 
     // MARK: PKCE helpers

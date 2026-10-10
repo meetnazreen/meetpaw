@@ -1,31 +1,34 @@
 import Foundation
 
-/// Google OAuth client credentials. Not secret-sensitive for a "Desktop app"
-/// client type (the secret isn't confidential in installed apps), but we keep
-/// it out of the repo anyway so every user wires their own GCP project.
-struct Credentials: Codable {
+/// OAuth client credentials for a provider. `clientSecret` is nil for public
+/// clients (Microsoft desktop app).
+struct Credentials {
     let clientID: String
-    let clientSecret: String
+    let clientSecret: String?
 
-    enum CodingKeys: String, CodingKey {
-        case clientID = "client_id"
-        case clientSecret = "client_secret"
+    static func dir() -> URL {
+        FileManager.default.homeDirectoryForCurrentUser.appending(path: ".config/meetpaw")
     }
 
-    /// Looked up at ~/.config/meetpaw/credentials.json
-    static var fileURL: URL {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        return home.appending(path: ".config/meetpaw/credentials.json")
+    static func fileURL(for provider: Provider) -> URL {
+        dir().appending(path: provider.credentialsFile)
     }
 
-    static func load() -> Credentials? {
-        guard let data = try? Data(contentsOf: fileURL) else { return nil }
-        // Supports either a bare {client_id, client_secret} or Google's
-        // downloaded {"installed": {...}} client_secret_*.json shape.
-        if let c = try? JSONDecoder().decode(Credentials.self, from: data) {
-            return c
+    static func load(_ provider: Provider) -> Credentials? {
+        guard let data = try? Data(contentsOf: fileURL(for: provider)) else { return nil }
+        // Accept a bare {client_id, client_secret?} or Google's {"installed": {...}}.
+        if let c = decode(data) { return c }
+        if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let inner = obj["installed"] as? [String: Any],
+           let d = try? JSONSerialization.data(withJSONObject: inner) {
+            return decode(d)
         }
-        struct Wrapper: Codable { let installed: Credentials }
-        return try? JSONDecoder().decode(Wrapper.self, from: data).installed
+        return nil
+    }
+
+    private static func decode(_ data: Data) -> Credentials? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let id = obj["client_id"] as? String else { return nil }
+        return Credentials(clientID: id, clientSecret: obj["client_secret"] as? String)
     }
 }

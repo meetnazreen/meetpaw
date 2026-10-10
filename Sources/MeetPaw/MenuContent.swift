@@ -38,20 +38,37 @@ struct MenuContent: View {
             Text("MeetPaw").font(.headline)
             Spacer()
             Menu {
-                if isSignedIn {
+                if model.isSignedIn {
                     Button { Task { await model.refresh() } } label: {
                         Label("Refresh", systemImage: "arrow.clockwise")
+                    }
+                }
+                // Default provider for instant meetings.
+                if model.signedIn.count > 1 {
+                    Picker("Default for instant meeting", selection: Binding(
+                        get: { model.defaultProvider }, set: { model.defaultProvider = $0 })) {
+                        ForEach(Provider.allCases.filter { model.isSignedIn($0) }) { p in
+                            Text(p.name).tag(p)
+                        }
                     }
                 }
                 Toggle(isOn: $model.launchAtLogin) {
                     Label("Launch at login", systemImage: "power")
                 }
                 Divider()
-                if isSignedIn {
-                    Button(role: .destructive) { model.signOut() } label: {
-                        Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                // Per-provider connect / sign out.
+                ForEach(Provider.allCases) { p in
+                    if model.isSignedIn(p) {
+                        Button(role: .destructive) { model.signOut(p) } label: {
+                            Label("Sign out of \(p.name)", systemImage: "rectangle.portrait.and.arrow.right")
+                        }
+                    } else if model.hasCredentials(p) {
+                        Button { model.signIn(p) } label: {
+                            Label("Sign in with \(p.name)", systemImage: "plus.circle")
+                        }
                     }
                 }
+                Divider()
                 Button { NSApp.terminate(nil) } label: {
                     Label("Quit MeetPaw", systemImage: "xmark.circle")
                 }
@@ -73,19 +90,8 @@ struct MenuContent: View {
     @ViewBuilder
     private func body(for state: AppModel.State) -> some View {
         switch state {
-        case .needsCredentials:
-            message("Add your Google OAuth credentials to get started.",
-                    systemImage: "key.fill") {
-                Button("Open credentials folder…") { model.openCredentialsFolder() }
-                Text("Drop your client_secret JSON as credentials.json, then relaunch.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-        case .signedOut:
-            message("Sign in with Google to see your meetings.",
-                    systemImage: "person.crop.circle") {
-                Button("Sign in with Google") { model.signIn() }
-                    .buttonStyle(.borderedProminent)
-            }
+        case .needsCredentials, .signedOut:
+            ProviderSignIn(model: model)
         case .loading:
             HStack { ProgressView().controlSize(.small); Text("Loading…") }
                 .foregroundStyle(.secondary)
@@ -250,6 +256,7 @@ struct MeetingRow: View {
 /// Liquid Glass card showing a freshly created meeting link.
 struct GlassLinkCard: View {
     let url: URL
+    var provider: Provider = .google
     let copy: () -> Void
     let join: () -> Void
     let dismiss: () -> Void
@@ -258,7 +265,7 @@ struct GlassLinkCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                MeetLogo.image.map { Image(nsImage: $0).resizable().scaledToFit().frame(height: 18) }
+                ProviderLogoView(provider: provider, size: 18)
                 Text("New meeting ready")
                     .font(.subheadline).fontWeight(.semibold)
                 Spacer()

@@ -2,7 +2,7 @@ import Foundation
 
 /// Calendar + Meet REST calls. Plain HTTPS/JSON, no Google SDK.
 struct GoogleAPI {
-    let auth: GoogleAuth
+    let auth: OAuthClient
 
     /// Upcoming events in the next 24h that have a Meet link, soonest first.
     func upcomingMeetings() async throws -> [CalendarEvent] {

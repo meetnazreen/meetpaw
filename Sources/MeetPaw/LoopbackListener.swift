@@ -13,11 +13,18 @@ final class LoopbackListener {
     private let listener: NWListener
     private var continuation: CheckedContinuation<OAuthCallback, Error>?
 
-    init() throws {
+    init(port: Int? = nil) throws {
         let params = NWParameters.tcp
         params.requiredInterfaceType = .loopback
-        listener = try NWListener(using: params, on: .any)
+        params.allowLocalEndpointReuse = true
+        if let port, let nwPort = NWEndpoint.Port(rawValue: UInt16(port)) {
+            listener = try NWListener(using: params, on: nwPort)
+        } else {
+            listener = try NWListener(using: params, on: .any)
+        }
     }
+
+    deinit { listener.cancel() }
 
     /// Starts listening and resolves with the chosen port.
     func start() async throws -> UInt16 {
@@ -36,7 +43,19 @@ final class LoopbackListener {
         }
     }
 
-    func waitForCallback() async throws -> OAuthCallback {
+    func waitForCallback(timeout: TimeInterval = 300) async throws -> OAuthCallback {
+        try await withThrowingTaskGroup(of: OAuthCallback.self) { group in
+            group.addTask { try await self.awaitRedirect() }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                throw AuthError.server("Sign-in timed out.")
+            }
+            defer { group.cancelAll(); self.listener.cancel() }
+            return try await group.next()!
+        }
+    }
+
+    private func awaitRedirect() async throws -> OAuthCallback {
         try await withCheckedThrowingContinuation { cont in self.continuation = cont }
     }
 

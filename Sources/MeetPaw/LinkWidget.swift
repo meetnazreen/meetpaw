@@ -14,6 +14,7 @@ struct LinkWidget: View {
         ZStack {
             if let link = model.createdLink {
                 GlassLinkCard(url: link,
+                              provider: model.createdProvider ?? .google,
                               copy: {
                                   model.copyLink()
                                   // Let the "Copied!" tick show, then dismiss.

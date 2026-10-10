@@ -11,25 +11,31 @@ final class AppModel {
     private(set) var state: State = .signedOut
     private(set) var meetings: [CalendarEvent] = []
     private(set) var createdLink: URL?       // last instant meeting, shown in the glass card
+    private(set) var createdProvider: Provider?
     private(set) var creatingLink = false
+    private(set) var signedIn: Set<Provider> = []
 
-    /// Synchronous signed-in check derived from UI state.
-    var isSignedIn: Bool {
-        switch state {
-        case .signedOut, .needsCredentials: return false
-        default: return true
+    /// Signed into at least one provider.
+    var isSignedIn: Bool { !signedIn.isEmpty }
+    func isSignedIn(_ p: Provider) -> Bool { signedIn.contains(p) }
+    func hasCredentials(_ p: Provider) -> Bool { Credentials.load(p) != nil }
+
+    /// Provider used for left-click / New instant meeting.
+    var defaultProvider: Provider {
+        get {
+            if let raw = UserDefaults.standard.string(forKey: "defaultProvider"),
+               let p = Provider(rawValue: raw), signedIn.contains(p) { return p }
+            return signedIn.sorted { $0.rawValue < $1.rawValue }.first ?? .google
         }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: "defaultProvider") }
     }
 
-    @ObservationIgnored private let auth = GoogleAuth()
-    @ObservationIgnored private lazy var api = GoogleAPI(auth: auth)
+    @ObservationIgnored let clients: [Provider: OAuthClient] =
+        Dictionary(uniqueKeysWithValues: Provider.allCases.map { ($0, OAuthClient($0)) })
+    private var googleAPI: GoogleAPI { GoogleAPI(auth: clients[.google]!) }
     @ObservationIgnored private var refreshTimer: Timer?
 
     init() {
-        if Credentials.load() == nil {
-            state = .needsCredentials
-            return
-        }
         Notifier.shared.start()
         Task { await bootstrap() }
         observeWake()
@@ -50,60 +56,72 @@ final class AppModel {
     }
 
     private func bootstrap() async {
-        if await auth.isSignedIn {
-            await refresh()
-            startTimer()
-        } else {
-            state = .signedOut
-        }
+        var signed: Set<Provider> = []
+        for p in Provider.allCases where await clients[p]!.isSignedIn { signed.insert(p) }
+        signedIn = signed
+        await settle()
     }
 
-    func signIn() {
+    /// Reconcile UI state after a sign-in/out change.
+    private func settle() async {
+        if signedIn.isEmpty { state = .signedOut; refreshTimer?.invalidate(); return }
+        if signedIn.contains(.google) { await refresh(); startTimer() }
+        else { state = .ready }   // Phase 2: merge Zoom/Teams upcoming here
+    }
+
+    func signIn(_ provider: Provider) {
         Task {
             state = .loading
             do {
-                try await auth.signIn()
-                await refresh()
-                startTimer()
+                try await clients[provider]!.signIn()
+                signedIn.insert(provider)
+                await settle()
             } catch {
                 state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             }
         }
     }
 
-    func signOut() {
+    func signOut(_ provider: Provider) {
         Task {
-            await auth.signOut()
-            meetings = []
-            state = .signedOut
-            refreshTimer?.invalidate()
+            await clients[provider]!.signOut()
+            signedIn.remove(provider)
+            if provider == .google { meetings = [] }
+            await settle()
         }
     }
 
     func refresh() async {
-        guard await auth.isSignedIn else { state = .signedOut; return }
-        // Only show the loading state on the first load; later refreshes update
-        // the list silently in the background (no flashing / clearing).
+        guard signedIn.contains(.google) else { return }   // calendar is Google (Phase 1)
         if case .ready = state {} else { state = .loading }
         do {
-            meetings = try await api.upcomingMeetings()
+            meetings = try await googleAPI.upcomingMeetings()
             Notifier.shared.schedule(meetings)
             state = .ready
         } catch AuthError.invalidGrant {
-            await auth.signOut()
-            state = .signedOut
+            await clients[.google]!.signOut()
+            signedIn.remove(.google)
+            meetings = []
+            await settle()
         } catch {
             state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
         }
     }
 
     func newInstantMeeting() {
+        let provider = defaultProvider
         Task {
             creatingLink = true
             defer { creatingLink = false }
             do {
-                let url = try await api.createInstantMeeting()
+                let url: URL
+                if provider == .google {
+                    url = try await googleAPI.createInstantMeeting()
+                } else {
+                    url = try await ProviderAPI(auth: clients[provider]!).createInstantMeeting()
+                }
                 createdLink = url
+                createdProvider = provider
                 copyLink()                       // auto-copy on create
             } catch {
                 state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
@@ -116,7 +134,7 @@ final class AppModel {
                          attendees: [String], addMeet: Bool) async -> Bool {
         do {
             let end = start.addingTimeInterval(TimeInterval(durationMinutes * 60))
-            try await api.createEvent(title: title, start: start, end: end,
+            try await googleAPI.createEvent(title: title, start: start, end: end,
                                       attendees: attendees, addMeet: addMeet)
             await refresh()
             return true
@@ -133,7 +151,7 @@ final class AppModel {
         Notifier.shared.schedule(meetings)
         Task {
             do {
-                try await api.deleteEvent(id: event.id)
+                try await googleAPI.deleteEvent(id: event.id)
             } catch {
                 meetings = backup           // restore
                 state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
@@ -146,7 +164,7 @@ final class AppModel {
                        durationMinutes: Int, attendees: [String], addMeet: Bool) async -> Bool {
         do {
             let end = start.addingTimeInterval(TimeInterval(durationMinutes * 60))
-            try await api.updateEvent(id: event.id, title: title, start: start, end: end,
+            try await googleAPI.updateEvent(id: event.id, title: title, start: start, end: end,
                                       attendees: attendees, addMeet: addMeet, hasMeet: event.hasMeet)
             await refresh()
             return true
@@ -174,7 +192,7 @@ final class AppModel {
     }
 
     func openCredentialsFolder() {
-        let dir = Credentials.fileURL.deletingLastPathComponent()
+        let dir = Credentials.dir()
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         NSWorkspace.shared.open(dir)
     }
