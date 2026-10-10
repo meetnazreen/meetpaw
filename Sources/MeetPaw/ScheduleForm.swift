@@ -21,23 +21,35 @@ struct ScheduleForm: View {
                 .textFieldStyle(.plain)
                 .glassField()
 
-            // Separate native Date and Time fields (both edit `start`).
-            HStack(alignment: .bottom, spacing: 12) {
+            // Date, Time, Duration on one line — unified glass fields, no arrows.
+            HStack(alignment: .bottom, spacing: 10) {
                 labeled("Date") {
                     DatePicker("", selection: $start, displayedComponents: .date)
-                        .datePickerStyle(.compact).labelsHidden()
+                        .datePickerStyle(.field).labelsHidden()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .glassField()
                 }
                 labeled("Time") {
                     DatePicker("", selection: $start, displayedComponents: .hourAndMinute)
-                        .datePickerStyle(.compact).labelsHidden()
+                        .datePickerStyle(.field).labelsHidden()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .glassField()
                 }
-            }
-
-            labeled("Duration") {
-                Picker("", selection: $durationMinutes) {
-                    ForEach(durations, id: \.self) { Text("\($0) min").tag($0) }
+                labeled("Duration") {
+                    Menu {
+                        ForEach(durations, id: \.self) { d in
+                            Button("\(d) min") { durationMinutes = d }
+                        }
+                    } label: {
+                        Text("\(durationMinutes) min")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .glassField()
+                    }
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .buttonStyle(.plain)
+                    .frame(width: 78)
                 }
-                .pickerStyle(.menu).labelsHidden()
             }
 
             // Attendees as chips.
@@ -140,6 +152,17 @@ extension View {
                 .overlay(shape.strokeBorder(.quaternary))
         }
     }
+
+    /// Liquid Glass capsule for the email chips.
+    @ViewBuilder
+    func glassChip() -> some View {
+        if #available(macOS 26.0, *) {
+            self.glassEffect(.regular, in: Capsule())
+        } else {
+            self.background(.regularMaterial, in: Capsule())
+                .overlay(Capsule().strokeBorder(.quaternary))
+        }
+    }
 }
 
 /// Wrapping row of removable email chips.
@@ -158,7 +181,7 @@ struct ChipFlow: View {
                     .buttonStyle(.plain).foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(Color.meetpaw.opacity(0.15), in: Capsule())
+                .glassChip()
             }
         }
     }
