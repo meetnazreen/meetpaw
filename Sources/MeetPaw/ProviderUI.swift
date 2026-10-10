@@ -71,8 +71,11 @@ struct ProviderLogoView: View {
     private var logo: NSImage? {
         ProviderLogo.image(named: resource ?? provider.logoResource)
     }
-    // A custom resource (the G favicon) is a glyph → fit; only Zoom fills.
-    private var fills: Bool { resource == nil && provider.avatarFills }
+    // Fill only the provider's own full-bleed asset (Zoom); sign-in glyph
+    // overrides (google_g, microsoft_logo) always fit.
+    private var fills: Bool {
+        provider.avatarFills && (resource == nil || resource == provider.logoResource)
+    }
 
     var body: some View {
         ZStack {
