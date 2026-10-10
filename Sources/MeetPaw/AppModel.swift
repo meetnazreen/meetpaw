@@ -82,7 +82,9 @@ final class AppModel {
 
     func refresh() async {
         guard await auth.isSignedIn else { state = .signedOut; return }
-        state = .loading
+        // Only show the loading state on the first load; later refreshes update
+        // the list silently in the background (no flashing / clearing).
+        if case .ready = state {} else { state = .loading }
         do {
             meetings = try await api.upcomingMeetings()
             Notifier.shared.schedule(meetings)

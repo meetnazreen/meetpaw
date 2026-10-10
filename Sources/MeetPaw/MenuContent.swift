@@ -50,8 +50,10 @@ struct MenuContent: View {
                 }
             } label: {
                 Image(systemName: "line.3.horizontal")
+                    .foregroundStyle(.secondary)
             }
             .menuStyle(.borderlessButton)
+            .buttonStyle(.plain)
             .menuIndicator(.hidden)
             .fixedSize()
             .help("Menu")
@@ -159,21 +161,25 @@ struct MeetingRow: View {
     @State private var hovering = false
 
     var body: some View {
-        Button(action: join) {
-            HStack(spacing: 10) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(event.summary ?? "(No title)").lineLimit(1)
-                    Text(timeLabel).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: event.hasMeet ? "video.fill" : "calendar")
-                    .foregroundStyle(event.hasMeet ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+        HStack(spacing: 10) {
+            // Icon before the title, muted.
+            Image(systemName: event.hasMeet ? "video.fill" : "calendar")
+                .foregroundStyle(.secondary)
+                .frame(width: 18)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(event.summary ?? "(No title)").lineLimit(1)
+                Text(timeLabel).font(.caption).foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .contentShape(Rectangle())
-            .background(hovering ? Color.primary.opacity(0.08) : .clear)
+            Spacer()
+            Button(action: join) {
+                Text(event.hasMeet ? "Join" : "Open")
+            }
+            .buttonStyle(.bordered)
+            .tint(event.hasMeet ? .meetpaw : .secondary)
+            .controlSize(.small)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(hovering ? Color.primary.opacity(0.06) : .clear)
         .onHover { hovering = $0 }
     }
 
