@@ -5,3 +5,6 @@ MeetPaw.app/
 # never commit OAuth credentials
 credentials.json
 client_secret*.json
+
+# Website lives in its own private repo (meetpaw-web)
+site/
