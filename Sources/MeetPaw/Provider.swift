@@ -91,7 +91,7 @@ enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
                 extraAuthParams: [:],
                 // Zoom rejects http loopback; use an HTTPS page that forwards
                 // the code to the local listener on 127.0.0.1:8765.
-                redirectOverride: "https://meetnazreen.github.io/meetpaw/oauth/zoom.html")
+                redirectOverride: "https://meetpaw.app/oauth/zoom.html")
         case .microsoft:
             return OAuthConfig(
                 authURL: "https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize",
