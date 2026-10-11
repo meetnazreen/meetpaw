@@ -5,8 +5,8 @@
   </picture>
 </p>
 
-<h3 align="center">Instant meetings, from your menu bar.</h3>
-<p align="center">Spin up a Google Meet, Zoom, or Microsoft Teams link in one click, and join your calendar meetings without leaving your desk.</p>
+<h3 align="center">Instant meetings, from your Mac menu bar.</h3>
+<p align="center">One-click Google Meet, Zoom &amp; Teams links, calendar sync, conflict detection, and global shortcuts for macOS.</p>
 
 <p align="center">
   <img alt="Platform" src="https://img.shields.io/badge/macOS-14%2B-111?logo=apple&logoColor=white">
