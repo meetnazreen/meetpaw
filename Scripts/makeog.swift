@@ -38,7 +38,7 @@ func draw(_ s: String, font: NSFont, color: NSColor, y: CGFloat) {
         withAttributes: [.font: font, .foregroundColor: color, .paragraphStyle: p])
 }
 draw("MeetPaw", font: .systemFont(ofSize: 58, weight: .bold), color: ink, y: H/2 + 86)
-draw("Instant meeting links, in one click.", font: .systemFont(ofSize: 52, weight: .semibold), color: ink, y: H/2 - 10)
+draw("Instant meetings, from your menu bar.", font: .systemFont(ofSize: 52, weight: .semibold), color: ink, y: H/2 - 10)
 draw("Google Meet · Zoom · Microsoft Teams — in your menu bar.", font: .systemFont(ofSize: 30, weight: .regular), color: muted, y: H/2 - 92)
 
 img.unlockFocus()
