@@ -22,8 +22,9 @@ import Base from "../layouts/Base.astro";
 
 <header class="hero">
   <div class="wrap">
+    <img class="hero-icon" src="/assets/icon.png" alt="MeetPaw" width="78" height="78" />
     <span class="eyebrow">🐾 Lives in your menu bar · <b>Free &amp; open source</b></span>
-    <h1>Instant meeting links,<br>on your menu bar.</h1>
+    <h1><span class="spark">✨</span> Instant meeting links,<br>on your menu bar.</h1>
     <p class="sub">MeetPaw spins up a Google Meet, Zoom, or Microsoft Teams link the moment you need it — and keeps your calendar meetings a click away.</p>
     <div class="cta-row">
       <a class="btn btn-primary" href="https://github.com/meetnazreen/meetpaw">Download for macOS</a>
@@ -237,13 +238,25 @@ import Base from "../layouts/Base.astro";
   .nav .spread,.foot .spread{flex:1}
   .nav .links{display:flex;gap:26px;color:var(--muted);font-size:.95rem;font-weight:500}
   .nav .links a:hover{color:var(--ink)}
-  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:.96rem;border-radius:12px;padding:11px 18px;transition:transform .12s ease,background .2s ease}
-  .btn-primary{background:var(--accent);color:#fff}
+  @property --angle{syntax:"<angle>";initial-value:0deg;inherits:false}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:.96rem;border-radius:12px;padding:12px 20px;transition:transform .12s ease,background .2s ease}
+  /* primary: animated gradient border (screen.studio style) */
+  .btn-primary{background:var(--accent);color:#fff;position:relative;isolation:isolate}
+  .btn-primary::before{content:"";position:absolute;inset:-1.5px;border-radius:13.5px;padding:1.5px;
+    background:conic-gradient(from var(--angle),#ffd9bd,#ea580c,#ffb27a,#ea580c,#ffd9bd);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+    animation:spin-border 4.5s linear infinite;z-index:-1}
   .btn-primary:hover{background:var(--accent-ink);transform:translateY(-1px)}
-  .btn-ghost{color:var(--ink);border:1px solid var(--line)}
-  .btn-ghost:hover{background:var(--sand)}
-  .btn-ghost.on-dark{color:#fff;border-color:#33333c}
-  .btn-ghost.on-dark:hover{background:#1f1f26}
+  @keyframes spin-border{to{--angle:360deg}}
+  /* secondary: frosted liquid glass */
+  .btn-ghost{color:var(--ink);background:rgba(255,255,255,.5);border:1px solid rgba(20,20,24,.1);
+    -webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6)}
+  .btn-ghost:hover{background:rgba(255,255,255,.78)}
+  .btn-ghost.on-dark{color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);backdrop-filter:blur(14px)}
+  .btn-ghost.on-dark:hover{background:rgba(255,255,255,.16)}
+
+  .hero-icon{display:block;margin:0 auto 20px;width:78px;height:78px;filter:drop-shadow(0 14px 30px rgba(234,88,12,.38))}
+  .spark{-webkit-text-fill-color:initial}
 
   .hero{position:relative;text-align:center;padding:84px 0 70px;overflow:hidden}
   .hero::before{content:"";position:absolute;left:50%;top:-80px;width:760px;height:620px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(234,88,12,.22),rgba(234,88,12,.06) 55%,transparent 72%);filter:blur(10px);z-index:0}
@@ -344,6 +357,6 @@ import Base from "../layouts/Base.astro";
     section.feat{padding:66px 0}
     .video-tilt{transform:none!important}
   }
-  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn,.video .play{transition:none}}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn,.video .play{transition:none}.btn-primary::before{animation:none}}
 </style>
 </Base>
