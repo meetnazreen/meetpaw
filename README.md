@@ -1,51 +1,72 @@
 <p align="center">
-  <img src="docs/icon.png" alt="MeetPaw" width="120" height="120">
+  <img src="docs/logo.png" alt="MeetPaw" width="320">
 </p>
 
-<h1 align="center">MeetPaw</h1>
+<p align="center">
+  <strong>Instant meetings, from your menu bar.</strong>
+</p>
 
-A tiny macOS menu-bar app for Google Meet. Spin up an instant meeting link in
-one click, and join your upcoming Google Calendar meetings without digging
-through tabs.
+<p align="center">
+  <img alt="Platform" src="https://img.shields.io/badge/macOS-14%2B-111?logo=apple&logoColor=white">
+  <img alt="Swift" src="https://img.shields.io/badge/SwiftUI-native-EA580C?logo=swift&logoColor=white">
+  <img alt="Dependencies" src="https://img.shields.io/badge/dependencies-zero-2ea44f">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+</p>
 
-- **New instant meeting** — creates a fresh Meet link (Google Meet REST API),
-  copies it to the clipboard, and opens it.
-- **Upcoming meetings** — lists Calendar events with a Meet link in the next
-  24 hours; click to join.
+---
 
-Native SwiftUI `MenuBarExtra`, no third-party dependencies.
+MeetPaw is a lightweight macOS menu-bar app that puts your meetings one click away. Spin up an instant Google Meet, Zoom, or Microsoft Teams link the moment you need it. The link is created, copied to your clipboard, and ready to share before you've switched windows. No tabs, no digging, no friction.
+
+It also keeps your day in view: MeetPaw syncs with your Google Calendar and shows your upcoming meetings right in the menu bar, so you can join with a single click and get a heads-up notification 15 minutes before each one starts. Schedule new meetings complete with title, date, time, guests, and an auto-generated video link without ever opening a browser, and edit or delete them with a swipe.
+
+Built natively in SwiftUI with zero third-party dependencies, MeetPaw is fast, private, and respectful of your Mac. Your account tokens stay in the macOS Keychain and never leave your device. The app talks only to Google, Zoom, and Microsoft directly. It's free, open source under the MIT license, and brings its own playful touch, right down to the paws that walk across your menu bar while a meeting spins up.
+
+## Highlights
+
+- **One-click instant meetings** across Google Meet, Zoom, and Microsoft Teams
+- **Upcoming meetings** from your Google Calendar, with one-click join
+- **Schedule, edit, and delete** meetings natively, no browser needed
+- **Cross-calendar conflict detection** when you pick a time
+- **Global shortcuts** (⌘⇧M / ⌘⇧Z / ⌘⇧T) to start a meeting from any app
+- **15-minute reminders** before every meeting
+- **Multiple accounts** per provider (up to five each), merged into one list
+- **Launch at login**, Liquid Glass UI, and a menu-bar paw that actually walks
+- **Private by design**: tokens live only in your Keychain, no servers, no tracking
+- **Free and open source** under the MIT license
 
 ## Requirements
 
-- macOS 14+
-- Xcode / Swift toolchain (`swift --version`)
-- A Google Cloud project with OAuth credentials (see below)
+- macOS 14 or later (Apple silicon or Intel)
+- Xcode / Swift toolchain (`swift --version`) to build from source
+- Your own OAuth credentials for the providers you want to use (see below)
 
-## Google Cloud setup (one-time)
+## Setup
 
-MeetPaw talks to Google as *your own* OAuth app, so you supply the credentials:
+MeetPaw talks to each provider as *your own* OAuth app, so you supply the credentials. Drop them into `~/.config/meetpaw/` (the app's "Add account" screen has an "Open credentials folder…" button that creates it for you).
 
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/) and
-   create (or pick) a project.
-2. **APIs & Services → Enable APIs** → enable both:
-   - Google Calendar API
-   - Google Meet API
-3. **OAuth consent screen** → External. Add your Google account under
-   **Test users**.
-4. **Credentials → Create credentials → OAuth client ID → Desktop app.**
-5. Download the JSON. Save it as:
+### Google Meet
 
-   ```
-   ~/.config/meetpaw/credentials.json
-   ```
+1. Open the [Google Cloud Console](https://console.cloud.google.com/) and create or pick a project.
+2. **APIs & Services → Enable APIs** → enable **Google Calendar API** and **Google Meet API**.
+3. **OAuth consent screen** → External. Add your Google account under **Test users** (or publish to Production to avoid the weekly re-login).
+4. **Credentials → Create credentials → OAuth client ID → Desktop app**, then download the JSON.
+5. Save it as `~/.config/meetpaw/credentials.json`.
 
-   (The app's "Open credentials folder…" button creates this folder for you.)
+Scopes: `calendar.events`, `meetings.space.created` (plus `openid`, `email` to show your address).
 
-### Scopes used
+### Zoom
 
-- `calendar.events` — read upcoming meetings, and create a Meet-linked event
-  as a fallback when the Meet API isn't available on your account
-- `meetings.space.created` — create instant meetings
+1. In the [Zoom Marketplace](https://marketplace.zoom.us/), **Develop → Build App → General App** (user-managed).
+2. Set the OAuth redirect to the forwarding page `https://meetpaw.app/oauth/zoom.html` (Zoom requires HTTPS, so MeetPaw bounces the sign-in through a small page).
+3. Add the scopes: `meeting:write:meeting`, `meeting:read:list_meetings`, `meeting:delete:meeting`, `user:read:user`.
+4. Save `~/.config/meetpaw/zoom.json` as `{ "client_id": "…", "client_secret": "…" }`.
+
+### Microsoft Teams
+
+1. In [Microsoft Entra](https://entra.microsoft.com/), **App registrations → New registration** (multitenant).
+2. Add a **Mobile and desktop** platform with redirect `http://localhost`, and enable **Allow public client flows**.
+3. Add delegated Graph permissions: `OnlineMeetings.ReadWrite`, `Calendars.ReadWrite`, `User.Read`, `offline_access`. Grant admin consent if your org requires it.
+4. Save `~/.config/meetpaw/microsoft.json` as `{ "client_id": "…" }` (public client, no secret).
 
 ## Build & run
 
@@ -54,16 +75,24 @@ MeetPaw talks to Google as *your own* OAuth app, so you supply the credentials:
 open MeetPaw.app
 ```
 
-A paw icon 🐾 appears in your menu bar. Click it → **Sign in with Google**.
+A paw icon 🐾 appears in your menu bar. Click it, choose a provider, and sign in.
 
-## A note on the "testing" OAuth mode
+- **Left-click** the paw → instant meeting with your default provider.
+- **Right-click** the paw → the drawer: upcoming meetings, schedule, accounts, settings.
 
-While your consent screen is in **Testing** status, Google expires the refresh
-token after **7 days**, so you'll be asked to sign in again about weekly.
-Publishing the app to **Production** (it stays unverified, with a warning
-screen, which is fine for personal/open-source use under 100 users) removes the
-weekly re-login. MeetPaw handles the expiry gracefully — it just drops you back
-to the sign-in screen.
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| **⌘⇧M** | Instant Google Meet |
+| **⌘⇧Z** | Instant Zoom meeting |
+| **⌘⇧T** | Instant Microsoft Teams meeting |
+
+Shortcuts work system-wide, from any app.
+
+## Privacy
+
+MeetPaw runs entirely on your Mac. Your access and refresh tokens are stored in the macOS **Keychain** and never leave your device. The app communicates only with Google, Zoom, and Microsoft, directly. There are no analytics, no tracking, and no servers in between. See the [Privacy Policy](https://meetpaw.app/privacy).
 
 ## Development
 
