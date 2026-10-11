@@ -91,16 +91,24 @@ struct ProviderAPI {
         let (data, resp) = try await URLSession.shared.data(for: req)
         try Self.check(resp, data)
         let list = try JSONDecoder().decode(GraphEvents.self, from: data)
-        let gf = DateFormatter()
-        gf.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSS"
-        gf.timeZone = TimeZone(identifier: "UTC")
         return (list.value ?? []).compactMap { e in
-            guard let dt = e.start?.dateTime, let when = gf.date(from: dt) else { return nil }
+            guard let dt = e.start?.dateTime, let when = Self.parseGraphDate(dt) else { return nil }
             let join = e.onlineMeeting?.joinUrl ?? e.webLink
             guard let join else { return nil }
             return CalendarEvent.external(id: "teams-\(e.id ?? UUID().uuidString)",
                 title: e.subject ?? "Teams meeting", start: when, end: nil, joinURL: join)
         }
+    }
+
+    /// Graph returns UTC wall time like "2026-10-11T10:00:00.0000000" (variable
+    /// fractional digits, no offset). Parse the seconds part as UTC.
+    static func parseGraphDate(_ s: String) -> Date? {
+        let base = s.split(separator: ".").first.map(String.init) ?? s
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        return f.date(from: base)
     }
 
     // MARK: Scheduled meetings
