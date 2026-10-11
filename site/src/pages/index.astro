@@ -1,0 +1,349 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base
+  title="MeetPaw — Instant meeting links, in one click"
+  description="A tiny macOS menu-bar app to start Google Meet, Zoom, and Microsoft Teams meetings instantly — and join your calendar meetings in one click."
+  path="/"
+>
+<nav>
+  <div class="wrap nav">
+    <a class="brand" href="/"><img src="/assets/icon.png" alt="MeetPaw" /> MeetPaw</a>
+    <div class="spread"></div>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#shortcuts">Shortcuts</a>
+      <a href="#privacy">Privacy</a>
+      <a href="https://github.com/meetnazreen/meetpaw">Open source</a>
+    </div>
+    <a class="btn btn-primary" href="https://github.com/meetnazreen/meetpaw">Get MeetPaw</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">🐾 Lives in your menu bar · <b>Free &amp; open source</b></span>
+    <h1>Instant meeting links,<br>in one click.</h1>
+    <p class="sub">MeetPaw spins up a Google Meet, Zoom, or Microsoft Teams link the moment you need it — and keeps your calendar meetings a click away.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/meetnazreen/meetpaw">Download for macOS</a>
+      <a class="btn btn-ghost" href="#features">See how it works</a>
+    </div>
+    <p class="cta-note">macOS 14+ · Apple silicon &amp; Intel · ~5 MB</p>
+  </div>
+
+  <!-- Hero video placeholder with scroll parallax -->
+  <div class="wrap-wide">
+    <div class="video-tilt" id="videoTilt">
+      <div class="video" role="img" aria-label="MeetPaw demo">
+        <div class="video-inner">
+          <div class="drawer">
+            <div class="d-head"><span class="p">🐾</span><b>MeetPaw</b><span class="pill">All accounts ⌄</span></div>
+            <div class="d-primary"><span>🎥</span> New instant meeting</div>
+            <div class="d-sub"><span>🗓️</span> Schedule meeting</div>
+            <div class="d-list">UPCOMING</div>
+            <div class="d-row"><span class="ic">◉</span><span class="t"><b>Design review</b><span>in 9 min · 2:30 PM · you@studio.com</span></span><span class="join">Join</span></div>
+            <div class="d-row"><span class="ic">◉</span><span class="t"><b>Standup</b><span>3:00 PM · Zoom account</span></span><span class="join">Join</span></div>
+          </div>
+        </div>
+        <button class="play" aria-label="Play demo">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="marq">
+  <div class="wrap in">
+    <span class="lead">Works with</span>
+    <span class="chip"><img src="/assets/meet.svg" alt="" />Google Meet</span>
+    <span class="chip"><img src="/assets/zoom.png" alt="" />Zoom</span>
+    <span class="chip"><img src="/assets/teams.svg" alt="" />Microsoft Teams</span>
+  </div>
+</div>
+
+<section class="feat" id="features">
+  <div class="wrap grid">
+    <div class="copy">
+      <div class="kicker">Instant meetings</div>
+      <h2>Click the paw. The link is ready.</h2>
+      <p class="lead">One click creates a meeting on your default provider, copies the link to your clipboard, and opens it. No tabs, no digging, no waiting.</p>
+      <ul class="ul">
+        <li><span class="ck"></span> Google Meet, Zoom, and Teams in one place</li>
+        <li><span class="ck"></span> The link lands on your clipboard automatically</li>
+        <li><span class="ck"></span> Paws walk across the menu bar while it works</li>
+      </ul>
+    </div>
+    <div class="card dark">
+      <div class="d-head"><span class="p" style="width:30px;height:30px">🎥</span><b>New meeting ready</b><span class="pill" style="margin-left:auto">✕</span></div>
+      <div class="field mono">meet.google.com/ewq-giyy-iik</div>
+      <div class="field row bare">
+        <div class="f solid">Join</div>
+        <div class="f">Copy link</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="feat alt">
+  <div class="wrap grid flip">
+    <div class="copy">
+      <div class="kicker">One calendar, every account</div>
+      <h2>All your meetings, together.</h2>
+      <p class="lead">Connect several Google, Zoom, and Teams accounts — up to five each. MeetPaw merges every upcoming meeting into one list and filters by account whenever you want.</p>
+      <ul class="ul">
+        <li><span class="ck"></span> Join with a single click</li>
+        <li><span class="ck"></span> A reminder 15 minutes before each one</li>
+        <li><span class="ck"></span> Swipe to delete, right-click for options</li>
+      </ul>
+    </div>
+    <div class="card dark">
+      <div class="d-list first">UPCOMING</div>
+      <div class="d-row"><span class="ic">🎥</span><span class="t"><b>Contract negotiation</b><span>in 15 min · 10:00 AM · you@acme.com</span></span><span class="join">Join</span></div>
+      <div class="d-row"><span class="ic">🎥</span><span class="t"><b>Carnival sync</b><span>1:00 PM · Zoom account</span></span><span class="join">Join</span></div>
+      <div class="d-row"><span class="ic">🗓️</span><span class="t"><b>Team offsite</b><span>5:00 PM · naz@hookseek.com</span></span><span class="join open">Open</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="feat">
+  <div class="wrap grid">
+    <div class="copy">
+      <div class="kicker">Schedule &amp; detect conflicts</div>
+      <h2>Book across providers, without the clash.</h2>
+      <p class="lead">Pick an account, a time, and guests. MeetPaw creates the event with a meeting link — and warns you the moment the slot overlaps anything on your connected calendars.</p>
+      <ul class="ul">
+        <li><span class="ck"></span> Native date &amp; time pickers</li>
+        <li><span class="ck"></span> Guest invites by email</li>
+        <li><span class="ck"></span> Cross-calendar conflict warnings</li>
+      </ul>
+    </div>
+    <div class="card dark">
+      <div class="sform">
+        <div class="field">Design review</div>
+        <div class="field row"><span class="f sub">11 Oct 2026</span><span class="f sub">2:30 PM</span><span class="f sub">30 min</span></div>
+        <div class="warn"><span>⚠️</span><div><b>Overlaps 1 event</b><br><span class="dim">Standup · you@studio.com at 2:15 PM</span></div></div>
+        <div class="field row bare"><span class="f">Cancel</span><span class="f solid">Schedule</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="feat alt" id="shortcuts">
+  <div class="wrap grid flip">
+    <div class="copy">
+      <div class="kicker">Global shortcuts</div>
+      <h2>A meeting from anywhere.</h2>
+      <p class="lead">Keep your hands on the keyboard. A global hotkey starts a meeting with the provider you choose — no matter which app you're in.</p>
+      <ul class="ul">
+        <li><span class="ck"></span> Works system-wide, not just in the app</li>
+        <li><span class="ck"></span> Launch at login, stay out of your way</li>
+      </ul>
+    </div>
+    <div class="card dark">
+      <div class="keys">
+        <div class="keyrow"><img src="/assets/meet.svg" alt="" /><b>Google Meet</b><span class="kbd"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>M</kbd></span></div>
+        <div class="keyrow"><img src="/assets/zoom.png" alt="" /><b>Zoom</b><span class="kbd"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>Z</kbd></span></div>
+        <div class="keyrow"><img src="/assets/teams.svg" alt="" /><b>Microsoft Teams</b><span class="kbd"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>T</kbd></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="privacy">
+  <div class="wrap">
+    <h2>Private by design.</h2>
+    <p>MeetPaw runs entirely on your Mac. Your account tokens live in the macOS Keychain and never leave your device — the app talks only to Google, Zoom, and Microsoft, directly.</p>
+    <div class="trust">
+      <div class="t"><b>Keychain only</b>Tokens stay on your Mac. No servers, no accounts with us.</div>
+      <div class="t"><b>No tracking</b>No analytics, no ads, nothing to sell.</div>
+      <div class="t"><b>Open source</b>Read every line. MIT licensed on GitHub.</div>
+    </div>
+  </div>
+</section>
+
+<section class="close">
+  <div class="wrap">
+    <div class="box">
+      <h2>Meetings, one paw away.</h2>
+      <p>Put MeetPaw in your menu bar and never hunt for a meeting link again.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/meetnazreen/meetpaw">Download for macOS</a>
+        <a class="btn btn-ghost on-dark" href="https://github.com/meetnazreen/meetpaw">View on GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <a class="brand small" href="/"><img src="/assets/icon.png" alt="" /> MeetPaw</a>
+    <div class="spread"></div>
+    <div class="legal">
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="https://github.com/meetnazreen/meetpaw">GitHub</a>
+    </div>
+  </div>
+  <div class="wrap copyright">© 2026 MeetPaw · Not affiliated with Google, Zoom, or Microsoft.</div>
+</footer>
+
+<script is:inline>
+  // screen.studio-style scroll parallax: hero video starts tilted, flattens + scales up.
+  (function () {
+    const el = document.getElementById('videoTilt');
+    if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let ticking = false;
+    function update() {
+      const vh = window.innerHeight;
+      const rect = el.getBoundingClientRect();
+      // progress: 0 when the element top is near the bottom, 1 when scrolled up.
+      const p = Math.min(1, Math.max(0, 1 - (rect.top - vh * 0.18) / (vh * 0.7)));
+      const rotate = (1 - p) * 14;      // 14deg → 0
+      const scale = 0.92 + p * 0.08;    // 0.92 → 1
+      const lift = (1 - p) * 20;        // subtle rise
+      el.style.transform = `perspective(1600px) rotateX(${rotate}deg) scale(${scale}) translateY(${lift}px)`;
+      ticking = false;
+    }
+    function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+  })();
+</script>
+
+<style is:global>
+  :root{
+    --ink:#14141A; --muted:#6B7280; --line:#ECECE8;
+    --paper:#FFFFFF; --sand:#F6F6F4; --accent:#EA580C; --accent-ink:#B8420A;
+    --drawer:#141418; --drawer-line:#24242B;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;font-weight:450;line-height:1.6;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em;overflow-x:hidden}
+  h1,h2,h3{font-family:"Manrope",system-ui,sans-serif;font-weight:700;line-height:1.04;letter-spacing:-0.03em;margin:0}
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+  .wrap-wide{max-width:1180px;margin:0 auto;padding:0 28px}
+
+  nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.72);backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;gap:22px;height:66px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:"Manrope";font-weight:700;font-size:1.12rem}
+  .brand img{width:30px;height:30px;border-radius:8px}
+  .brand.small{font-size:1rem}.brand.small img{width:24px;height:24px;border-radius:6px}
+  .nav .spread,.foot .spread{flex:1}
+  .nav .links{display:flex;gap:26px;color:var(--muted);font-size:.95rem;font-weight:500}
+  .nav .links a:hover{color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:.96rem;border-radius:12px;padding:11px 18px;transition:transform .12s ease,background .2s ease}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:var(--accent-ink);transform:translateY(-1px)}
+  .btn-ghost{color:var(--ink);border:1px solid var(--line)}
+  .btn-ghost:hover{background:var(--sand)}
+  .btn-ghost.on-dark{color:#fff;border-color:#33333c}
+  .btn-ghost.on-dark:hover{background:#1f1f26}
+
+  .hero{position:relative;text-align:center;padding:84px 0 70px;overflow:hidden}
+  .hero::before{content:"";position:absolute;left:50%;top:-80px;width:760px;height:620px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(234,88,12,.22),rgba(234,88,12,.06) 55%,transparent 72%);filter:blur(10px);z-index:0}
+  .hero > *{position:relative;z-index:1}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--sand);border:1px solid var(--line);color:var(--muted);font-size:.84rem;font-weight:500;padding:6px 13px;border-radius:999px;margin-bottom:22px}
+  .eyebrow b{color:var(--accent-ink);font-weight:600}
+  h1{font-size:clamp(2.6rem,6.2vw,4.6rem)}
+  .hero p.sub{max-width:40ch;margin:20px auto 0;color:var(--muted);font-size:clamp(1.05rem,1.6vw,1.28rem)}
+  .cta-row{display:flex;gap:12px;justify-content:center;margin-top:30px;flex-wrap:wrap}
+  .cta-note{margin-top:14px;color:var(--muted);font-size:.86rem}
+
+  /* hero video + parallax */
+  .video-tilt{margin-top:52px;will-change:transform;transform-origin:center top;transition:transform .05s linear}
+  .video{position:relative;aspect-ratio:16/9;border-radius:20px;overflow:hidden;background:radial-gradient(130% 130% at 50% 0%,#20202a,#101014);border:1px solid #23232b;box-shadow:0 50px 100px -40px rgba(20,20,24,.55),0 14px 40px -18px rgba(20,20,24,.4)}
+  .video-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .video .drawer{transform:scale(1.15)}
+  .video .play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;border:none;cursor:pointer;background:rgba(255,255,255,.92);color:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px -8px rgba(0,0,0,.4);transition:transform .15s ease}
+  .video .play:hover{transform:translate(-50%,-50%) scale(1.06)}
+
+  /* drawer mock */
+  .drawer{background:var(--drawer);border:1px solid var(--drawer-line);border-radius:18px;padding:12px;color:#fff;text-align:left;width:300px}
+  .d-head{display:flex;align-items:center;gap:9px;padding:4px 4px 10px}
+  .d-head .p{width:26px;height:26px;border-radius:8px;background:linear-gradient(160deg,#f5833a,var(--accent));display:flex;align-items:center;justify-content:center;font-size:14px}
+  .d-head b{font-family:"Manrope";font-weight:600}
+  .d-head .pill{margin-left:auto;font-size:.76rem;color:#aeb0b8;border:1px solid var(--drawer-line);border-radius:7px;padding:3px 9px}
+  .d-primary{background:var(--accent);border-radius:11px;padding:11px 13px;font-weight:600;display:flex;align-items:center;gap:9px;font-size:.95rem}
+  .d-sub{background:#1c1c22;border-radius:11px;padding:10px 13px;margin-top:7px;color:#c8c9d0;font-weight:500;display:flex;align-items:center;gap:9px;font-size:.95rem}
+  .d-list{margin-top:11px;color:#8c8d96;font-size:.72rem;letter-spacing:.04em;padding:0 4px 4px}
+  .d-list.first{margin-top:0}
+  .d-row{display:flex;align-items:center;gap:10px;padding:8px 4px}
+  .d-row .ic{width:18px;color:#8c8d96;font-size:.8rem}
+  .d-row .t b{font-weight:500;color:#eceef2;font-size:.92rem}
+  .d-row .t span{display:block;color:#8c8d96;font-size:.78rem}
+  .d-row .join{margin-left:auto;font-size:.8rem;color:#f0875a;border:1px solid #3a2a22;background:#241a15;border-radius:7px;padding:3px 10px}
+  .d-row .join.open{color:#aeb0b8;background:#1c1c22;border-color:#2a2a32}
+
+  .marq{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .marq .in{display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap;padding:26px 0;color:var(--muted)}
+  .marq .in .lead{color:var(--ink);font-weight:600}
+  .chip{display:inline-flex;align-items:center;gap:9px;font-weight:500;color:var(--ink)}
+  .chip img{width:22px;height:22px;object-fit:contain;border-radius:5px}
+
+  section.feat{padding:92px 0}
+  section.feat.alt{background:var(--sand)}
+  .grid{display:grid;grid-template-columns:1.05fr 1fr;gap:64px;align-items:center}
+  .grid.flip .copy{order:2}
+  .kicker{color:var(--accent-ink);font-weight:600;font-size:.96rem;margin-bottom:14px}
+  .feat h2{font-size:clamp(1.9rem,3.4vw,2.7rem)}
+  .feat p.lead{color:var(--muted);font-size:1.1rem;margin:16px 0 0;max-width:46ch}
+  .ul{margin:22px 0 0;padding:0;list-style:none;display:grid;gap:12px}
+  .ul li{display:flex;gap:11px;align-items:center;color:var(--ink)}
+  .ul .ck{flex:none;width:18px;height:18px;border-radius:50%;background:var(--accent);position:relative}
+  .ul .ck::after{content:"";position:absolute;left:5px;top:4px;width:5px;height:8px;border:2px solid #fff;border-top:0;border-left:0;transform:rotate(42deg)}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 24px 50px -32px rgba(20,20,24,.3)}
+  .card.dark{background:var(--drawer);border-color:var(--drawer-line);color:#fff;box-shadow:0 34px 70px -34px rgba(20,20,24,.5)}
+  .field{background:#1c1c22;border-radius:10px;padding:11px 13px;color:#c8c9d0;font-weight:500;font-size:.95rem}
+  .field.mono{font-family:"Inconsolata",ui-monospace,monospace;color:#9ea0a8}
+  .field.row{display:flex;gap:10px}
+  .field.row.bare{background:transparent;padding:12px 0 0}
+  .field .f{flex:1;background:#23232b;border-radius:8px;padding:9px 10px;color:#c8c9d0;font-size:.9rem;text-align:center}
+  .field .f.solid{background:var(--accent);color:#fff;font-weight:600}
+  .field .f.sub{background:#23232b}
+  .warn{display:flex;gap:9px;align-items:flex-start;background:#241a15;border:1px solid #3a2a22;border-radius:10px;padding:11px 13px;color:#f0a06a;font-size:.88rem}
+  .warn .dim{color:#9a9ba3}
+
+  .keys{display:grid;gap:12px}
+  .keyrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#1c1c22}
+  .keyrow img{width:22px;height:22px;object-fit:contain;border-radius:6px}
+  .keyrow b{font-weight:500;color:#eceef2}
+  .kbd{margin-left:auto;display:flex;gap:5px}
+  .kbd kbd{font-family:"Inter";font-size:.8rem;color:#cdd0d6;background:#2a2a32;border:1px solid #383842;border-bottom-width:2px;border-radius:6px;padding:3px 7px;min-width:24px;text-align:center}
+
+  .band{padding:96px 0;text-align:center}
+  .band h2{font-size:clamp(1.9rem,3.6vw,2.8rem);max-width:18ch;margin:0 auto}
+  .band p{color:var(--muted);font-size:1.12rem;max-width:52ch;margin:18px auto 0}
+  .trust{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+  .trust .t{background:var(--sand);border:1px solid var(--line);border-radius:14px;padding:14px 18px;font-weight:500;text-align:left;max-width:240px}
+  .trust .t b{display:block;font-family:"Manrope";font-weight:600;margin-bottom:2px}
+
+  .close{padding:0 0 100px}
+  .close .box{background:var(--drawer);border-radius:26px;color:#fff;text-align:center;padding:72px 28px;position:relative;overflow:hidden}
+  .close .box::before{content:"";position:absolute;left:50%;bottom:-200px;width:600px;height:400px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(234,88,12,.5),transparent 70%);filter:blur(8px)}
+  .close h2{position:relative;font-size:clamp(2rem,4.4vw,3.2rem)}
+  .close p{position:relative;color:#b9bac2;margin:16px auto 0;max-width:40ch}
+  .close .cta-row{margin-top:28px}
+
+  footer{border-top:1px solid var(--line);padding:40px 0;color:var(--muted);font-size:.92rem}
+  .foot{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .foot a:hover{color:var(--ink)}
+  .legal{display:flex;gap:20px}
+  .copyright{margin-top:14px;font-size:.84rem}
+
+  @media (max-width:860px){
+    .nav .links{display:none}
+    .grid{grid-template-columns:1fr;gap:34px}
+    .grid.flip .copy{order:0}
+    section.feat{padding:66px 0}
+    .video-tilt{transform:none!important}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn,.video .play{transition:none}}
+</style>
+</Base>
