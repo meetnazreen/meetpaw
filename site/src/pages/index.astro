@@ -8,7 +8,7 @@ import Base from "../layouts/Base.astro";
 >
 <nav>
   <div class="wrap nav">
-    <a class="brand" href="/"><img src="/assets/icon.png" alt="MeetPaw" /> MeetPaw</a>
+    <a class="brand" href="/" aria-label="MeetPaw"><img class="logo" src="/assets/logo.png" alt="MeetPaw" /></a>
     <div class="spread"></div>
     <div class="links">
       <a href="#features">Features</a>
@@ -23,7 +23,7 @@ import Base from "../layouts/Base.astro";
 <header class="hero">
   <div class="wrap">
     <span class="eyebrow">🐾 Lives in your menu bar · <b>Free &amp; open source</b></span>
-    <h1>Instant meeting links,<br>in one click.</h1>
+    <h1>Instant meeting links,<br>on your menu bar.</h1>
     <p class="sub">MeetPaw spins up a Google Meet, Zoom, or Microsoft Teams link the moment you need it — and keeps your calendar meetings a click away.</p>
     <div class="cta-row">
       <a class="btn btn-primary" href="https://github.com/meetnazreen/meetpaw">Download for macOS</a>
@@ -178,7 +178,7 @@ import Base from "../layouts/Base.astro";
 
 <footer>
   <div class="wrap foot">
-    <a class="brand small" href="/"><img src="/assets/icon.png" alt="" /> MeetPaw</a>
+    <a class="brand" href="/" aria-label="MeetPaw"><img class="logo foot-logo" src="/assets/logo.png" alt="MeetPaw" /></a>
     <div class="spread"></div>
     <div class="legal">
       <a href="/privacy">Privacy</a>
@@ -231,9 +231,9 @@ import Base from "../layouts/Base.astro";
 
   nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.72);backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--line)}
   .nav{display:flex;align-items:center;gap:22px;height:66px}
-  .brand{display:flex;align-items:center;gap:10px;font-family:"Manrope";font-weight:700;font-size:1.12rem}
-  .brand img{width:30px;height:30px;border-radius:8px}
-  .brand.small{font-size:1rem}.brand.small img{width:24px;height:24px;border-radius:6px}
+  .brand{display:flex;align-items:center}
+  .brand .logo{height:28px;width:auto}
+  .brand .foot-logo{height:24px}
   .nav .spread,.foot .spread{flex:1}
   .nav .links{display:flex;gap:26px;color:var(--muted);font-size:.95rem;font-weight:500}
   .nav .links a:hover{color:var(--ink)}
