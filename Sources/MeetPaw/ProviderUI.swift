@@ -149,16 +149,22 @@ struct ProviderSignIn: View {
                 Text(subtitle).font(.caption).foregroundStyle(.secondary)
             }
             ForEach(Provider.allCases) { provider in
-                row(provider)
+                SignInRow(model: model, provider: provider)
             }
         }
         .padding(16)
         .disabled(model.signingIn)
         .opacity(model.signingIn ? 0.6 : 1)
     }
+}
 
-    @ViewBuilder
-    private func row(_ provider: Provider) -> some View {
+/// A sign-in / add-account row: flat by default, subtle highlight on hover.
+private struct SignInRow: View {
+    @Bindable var model: AppModel
+    let provider: Provider
+    @State private var hovering = false
+
+    var body: some View {
         let hasCreds = model.hasCredentials(provider)
         let atCap = hasCreds && !model.canAddAccount(provider)
         Button {
@@ -181,9 +187,12 @@ struct ProviderSignIn: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 10).padding(.horizontal, 12)
-            .glassCard(cornerRadius: 12)
+            .background(hovering && !atCap ? Color.primary.opacity(0.08) : .clear,
+                        in: RoundedRectangle(cornerRadius: 12))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onHover { hovering = $0 }
         .disabled(atCap)
         .opacity(atCap ? 0.5 : 1)
     }

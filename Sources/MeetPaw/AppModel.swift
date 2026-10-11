@@ -219,6 +219,8 @@ final class AppModel {
         }
         Task {
             creatingLink = true
+            createdLink = nil                 // clear old link → widget shows spinner instantly
+            createdProvider = account.provider
             defer { creatingLink = false }
             do {
                 let url: URL
