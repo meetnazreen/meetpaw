@@ -1,10 +1,12 @@
 <p align="center">
-  <img src="docs/logo.png" alt="MeetPaw" width="320">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo-white.png">
+    <img src="docs/logo.png" alt="MeetPaw" width="320">
+  </picture>
 </p>
 
-<p align="center">
-  <strong>Instant meetings, from your menu bar.</strong>
-</p>
+<h3 align="center">Instant meetings, from your menu bar.</h3>
+<p align="center">Spin up a Google Meet, Zoom, or Microsoft Teams link in one click, and join your calendar meetings without leaving your desk.</p>
 
 <p align="center">
   <img alt="Platform" src="https://img.shields.io/badge/macOS-14%2B-111?logo=apple&logoColor=white">
@@ -15,24 +17,24 @@
 
 ---
 
-MeetPaw is a lightweight macOS menu-bar app that puts your meetings one click away. Spin up an instant Google Meet, Zoom, or Microsoft Teams link the moment you need it. The link is created, copied to your clipboard, and ready to share before you've switched windows. No tabs, no digging, no friction.
+MeetPaw is a lightweight macOS menu-bar app that puts your meetings **one click away**. Spin up an instant **Google Meet, Zoom, or Microsoft Teams** link the moment you need it. The link is created, copied to your clipboard, and ready to share before you've switched windows. **No tabs, no digging, no friction.**
 
-It also keeps your day in view: MeetPaw syncs with your Google Calendar and shows your upcoming meetings right in the menu bar, so you can join with a single click and get a heads-up notification 15 minutes before each one starts. Schedule new meetings complete with title, date, time, guests, and an auto-generated video link without ever opening a browser, and edit or delete them with a swipe.
+It also keeps your day in view: MeetPaw syncs with your **Google Calendar** and shows your upcoming meetings right in the menu bar, so you can **join with a single click** and get a **heads-up notification 15 minutes** before each one starts. Schedule new meetings complete with title, date, time, guests, and an auto-generated video link **without ever opening a browser**, and edit or delete them with a **swipe**.
 
-Built natively in SwiftUI with zero third-party dependencies, MeetPaw is fast, private, and respectful of your Mac. Your account tokens stay in the macOS Keychain and never leave your device. The app talks only to Google, Zoom, and Microsoft directly. It's free, open source under the MIT license, and brings its own playful touch, right down to the paws that walk across your menu bar while a meeting spins up.
+Built natively in **SwiftUI with zero third-party dependencies**, MeetPaw is fast, private, and respectful of your Mac. Your account tokens stay in the **macOS Keychain** and never leave your device. The app talks only to Google, Zoom, and Microsoft directly. It's **free, open source under the MIT license**, and brings its own playful touch, right down to the paws that walk across your menu bar while a meeting spins up.
 
 ## Highlights
 
-- **One-click instant meetings** across Google Meet, Zoom, and Microsoft Teams
-- **Upcoming meetings** from your Google Calendar, with one-click join
-- **Schedule, edit, and delete** meetings natively, no browser needed
-- **Cross-calendar conflict detection** when you pick a time
-- **Global shortcuts** (⌘⇧M / ⌘⇧Z / ⌘⇧T) to start a meeting from any app
-- **15-minute reminders** before every meeting
-- **Multiple accounts** per provider (up to five each), merged into one list
-- **Launch at login**, Liquid Glass UI, and a menu-bar paw that actually walks
-- **Private by design**: tokens live only in your Keychain, no servers, no tracking
-- **Free and open source** under the MIT license
+- ⚡ &nbsp;**One-click instant meetings** across Google Meet, Zoom, and Microsoft Teams
+- 📅 &nbsp;**Upcoming meetings** from your Google Calendar, with one-click join
+- ✏️ &nbsp;**Schedule, edit, and delete** meetings natively, no browser needed
+- ⚠️ &nbsp;**Cross-calendar conflict detection** when you pick a time
+- ⌨️ &nbsp;**Global shortcuts** (⌘⇧M / ⌘⇧Z / ⌘⇧T) to start a meeting from any app
+- 🔔 &nbsp;**15-minute reminders** before every meeting
+- 👥 &nbsp;**Multiple accounts** per provider (up to five each), merged into one list
+- 🐾 &nbsp;**Launch at login**, Liquid Glass UI, and a menu-bar paw that actually walks
+- 🔒 &nbsp;**Private by design**: tokens live only in your Keychain, no servers, no tracking
+- 🆓 &nbsp;**Free and open source** under the MIT license
 
 ## Requirements
 
