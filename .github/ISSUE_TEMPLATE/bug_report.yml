@@ -1,0 +1,48 @@
+name: Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Left-click the paw
+        2. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider involved
+      options:
+        - Google Meet
+        - Zoom
+        - Microsoft Teams
+        - Not provider-specific
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "e.g. 14.5"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: MeetPaw version
+      placeholder: "e.g. 0.1.0 or a commit hash"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error text / screenshots
+      description: Paste any error shown in the app, or drop a screenshot.

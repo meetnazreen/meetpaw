@@ -36,11 +36,23 @@ Built natively in **SwiftUI with zero third-party dependencies**, MeetPaw is fas
 - 🔒 &nbsp;**Private by design**: tokens live only in your Keychain, no servers, no tracking
 - 🆓 &nbsp;**Free and open source** under the MIT license
 
+## Download
+
+Grab the latest **`MeetPaw.dmg`** from the
+[**Releases page**](https://github.com/meetnazreen/meetpaw/releases/latest),
+open it, and drag MeetPaw to Applications.
+
+> MeetPaw isn't notarized yet, so on first launch Gatekeeper will warn you.
+> Right-click the app → **Open**, then confirm (or **System Settings → Privacy
+> & Security → Open Anyway**). You only do this once.
+
+Prefer to build it yourself? See [Build & run](#build--run) below.
+
 ## Requirements
 
 - macOS 14 or later (Apple silicon or Intel)
-- Xcode / Swift toolchain (`swift --version`) to build from source
-- Your own OAuth credentials for the providers you want to use (see below)
+- Your own OAuth credentials for the providers you want to use (see [Setup](#setup))
+- To build from source: the Swift toolchain (`swift --version`)
 
 ## Setup
 
@@ -102,6 +114,17 @@ MeetPaw runs entirely on your Mac. Your access and refresh tokens are stored in 
 swift run MeetPaw --selftest   # runs the event-parsing self-check
 swift build                    # debug build
 ```
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and
+the [Code of Conduct](CODE_OF_CONDUCT.md), and use the issue templates for bugs
+and feature requests. Security issues go to [SECURITY.md](SECURITY.md), not a
+public issue.
+
+Cutting a release: push a tag like `v0.1.0` and GitHub Actions builds the DMG
+and attaches it to a new release automatically (see
+[`.github/workflows/release.yml`](.github/workflows/release.yml)).
 
 ## Author
 
