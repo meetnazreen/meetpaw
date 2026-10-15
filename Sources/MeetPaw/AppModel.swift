@@ -157,6 +157,10 @@ final class AppModel {
             meetings.removeAll { $0.account.id == account.id }
             if selectedAccountID == account.id { selectedAccountID = nil }
             if defaultAccountID == account.id { defaultAccountID = accounts.first?.id }
+            // Reflect the change instantly so the drawer never shows blank, then
+            // reopen it (the native menu may have dismissed the popover).
+            if accounts.isEmpty { state = .signedOut }
+            NotificationCenter.default.post(name: .meetpawReopenDrawer, object: nil)
             await settle()
         }
     }
@@ -361,4 +365,9 @@ final class AppModel {
             Task { await self?.refresh() }
         }
     }
+}
+
+extension Notification.Name {
+    /// Posted after an account change so the AppDelegate can re-present the drawer.
+    static let meetpawReopenDrawer = Notification.Name("MeetPaw.reopenDrawer")
 }

@@ -43,13 +43,12 @@ struct MenuContent: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            if let logo = AppLogo.wordmarkWhite {
+            if let logo = AppLogo.image {
                 Image(nsImage: logo).resizable().scaledToFit()
-                    .frame(height: 20)
-                    .accessibilityLabel("MeetPaw")
-            } else {
-                Text("MeetPaw").font(.headline)
+                    .frame(width: 22, height: 22)
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
             }
+            Text("MeetPaw").font(.headline)
             Spacer()
             if model.isSignedIn { accountDropdown }
             hamburger
@@ -352,12 +351,6 @@ enum MeetLogo {
 enum AppLogo {
     static let image: NSImage? = {
         guard let url = Bundle.module.url(forResource: "appicon", withExtension: "png") else { return nil }
-        return NSImage(contentsOf: url)
-    }()
-
-    /// White wordmark (paw + "MeetPaw") for the dark drawer header.
-    static let wordmarkWhite: NSImage? = {
-        guard let url = Bundle.module.url(forResource: "logo-white", withExtension: "png") else { return nil }
         return NSImage(contentsOf: url)
     }()
 }

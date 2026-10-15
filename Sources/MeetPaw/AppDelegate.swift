@@ -51,6 +51,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                object: nil, queue: .main) { [weak self] _ in
             self?.closePopovers()
         }
+        // After a sign-out (or other account change from the native menu), re-present
+        // the drawer so the user always sees the updated state instead of a blank bar.
+        NotificationCenter.default.addObserver(forName: .meetpawReopenDrawer,
+                                               object: nil, queue: .main) { [weak self] _ in
+            guard let self else { return }
+            self.linkPopover.performClose(nil)
+            self.show(self.drawerPopover)
+        }
     }
 
     private func closePopovers() {
