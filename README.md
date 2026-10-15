@@ -43,21 +43,29 @@ Built natively in **SwiftUI with zero third-party dependencies**, MeetPaw is fas
 
 ## Features
 
-**One click, link in hand.** MeetPaw opens a meeting on your chosen provider, copies the link to your clipboard, and launches it, all before you reach for a browser tab.
+### One click, link in hand.
 
-![Instant meeting demo](docs/gifs/instant.gif)
+MeetPaw opens a meeting on your chosen provider, copies the link to your clipboard, and launches it, all before you reach for a browser tab.
 
-**Every meeting in one list.** Add up to five Google, Zoom, and Teams accounts. MeetPaw blends them into a single timeline sorted by time, with one-click join and a heads-up 15 minutes before each call.
+<img src="docs/gifs/instant.gif" alt="Instant meeting demo" width="100%">
 
-![Merged upcoming list demo](docs/gifs/accounts.gif)
+### Every meeting in one list.
 
-**Schedule without a browser.** Set a title, date, time, and guests, pick a provider, and MeetPaw books the event with a ready-to-join link, flagging any clash across your calendars. Edit or delete with a swipe.
+Add up to five Google, Zoom, and Teams accounts. MeetPaw blends them into a single timeline sorted by time, with one-click join and a heads-up 15 minutes before each call.
 
-![Scheduling demo](docs/gifs/schedule.gif)
+<img src="docs/gifs/accounts.gif" alt="Merged upcoming list demo" width="100%">
 
-**Start a meeting without lifting your hands.** Global shortcuts spin up a meeting from any app: ⌘⇧M for Google Meet, ⌘⇧Z for Zoom, ⌘⇧T for Teams.
+### Schedule without a browser.
 
-![Global shortcuts demo](docs/gifs/shortcuts.gif)
+Set a title, date, time, and guests, pick a provider, and MeetPaw books the event with a ready-to-join link, flagging any clash across your calendars. Edit or delete with a swipe.
+
+<img src="docs/gifs/schedule.gif" alt="Scheduling demo" width="100%">
+
+### Start a meeting without lifting your hands.
+
+Global shortcuts spin up a meeting from any app: ⌘⇧M for Google Meet, ⌘⇧Z for Zoom, ⌘⇧T for Teams.
+
+<img src="docs/gifs/shortcuts.gif" alt="Global shortcuts demo" width="100%">
 
 ## Download
 
@@ -150,11 +158,6 @@ public issue.
 Cutting a release: push a tag like `v0.1.0` and GitHub Actions builds the DMG
 and attaches it to a new release automatically (see
 [`.github/workflows/release.yml`](.github/workflows/release.yml)).
-
-## Author
-
-Created and maintained by **Nazreen** &lt;nazreenexe@outlook.com&gt;
-([@meetnazreen](https://github.com/meetnazreen)).
 
 ## License
 
