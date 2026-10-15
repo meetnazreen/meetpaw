@@ -13,6 +13,10 @@
 </p>
 
 <p align="center">
+  <a href="https://www.producthunt.com/products/meetpaw?utm_source=badge-follow&utm_medium=badge&utm_source=badge-meetpaw" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/follow.svg?product_id=1346102&theme=light" alt="MeetPaw on Product Hunt" width="250" height="54" /></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/meetnazreen/meetpaw/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/meetnazreen/meetpaw?color=EA580C"></a>
   <a href="https://github.com/meetnazreen/meetpaw/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/meetnazreen/meetpaw/total?color=2ea44f&label=downloads"></a>
   <a href="https://www.patreon.com/cw/MeetPaw"><img alt="Support on Patreon" src="https://img.shields.io/badge/Patreon-support-FF424D?logo=patreon&logoColor=white"></a>
