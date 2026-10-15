@@ -15,6 +15,7 @@
 <p align="center">
   <a href="https://github.com/meetnazreen/meetpaw/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/meetnazreen/meetpaw?color=EA580C"></a>
   <a href="https://github.com/meetnazreen/meetpaw/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/meetnazreen/meetpaw/total?color=2ea44f&label=downloads"></a>
+  <a href="https://www.patreon.com/cw/MeetPaw"><img alt="Support on Patreon" src="https://img.shields.io/badge/Patreon-support-FF424D?logo=patreon&logoColor=white"></a>
   <img alt="Platform" src="https://img.shields.io/badge/macOS-14%2B-111?logo=apple&logoColor=white">
   <img alt="Swift" src="https://img.shields.io/badge/SwiftUI-native-blue?logo=swift&logoColor=white">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
@@ -166,6 +167,10 @@ public issue.
 Cutting a release: push a tag like `v0.1.0` and GitHub Actions builds the DMG
 and attaches it to a new release automatically (see
 [`.github/workflows/release.yml`](.github/workflows/release.yml)).
+
+## Support
+
+MeetPaw is, and always will be, **free and open source** — no feature is ever locked behind a paywall. If it saves you time and you'd like to help keep it maintained (and get it onto the Mac App Store), you can support development on [**Patreon**](https://www.patreon.com/cw/MeetPaw). Totally optional, hugely appreciated. 🐾
 
 ## License
 
