@@ -124,8 +124,16 @@ open MeetPaw.app
 
 A paw icon 🐾 appears in your menu bar. Click it, choose a provider, and sign in.
 
-- **Left-click** the paw → instant meeting with your default provider.
-- **Right-click** the paw → the drawer: upcoming meetings, schedule, accounts, settings.
+## Gestures
+
+MeetPaw is driven entirely from the menu-bar paw:
+
+| Gesture | Action |
+|---------|--------|
+| **Single-click / one-finger tap** (primary click) | Start an instant meeting with your default provider and copy the link |
+| **Right-click / two-finger tap** (secondary click, or Control-click) | Open the drawer: upcoming meetings, schedule, accounts, and settings |
+
+Left-click is the fast path (meeting link in one tap); the two-finger/right-click menu is where everything else lives.
 
 ## Keyboard shortcuts
 
