@@ -87,7 +87,8 @@ enum Provider: String, CaseIterable, Identifiable, Codable, Hashable {
                 scopes: ["meeting:write:meeting", "meeting:read:list_meetings",
                          "meeting:delete:meeting", "user:read:user"],
                 redirectHost: "127.0.0.1", fixedPort: 8765, usePKCE: true,
-                clientAuth: .basicHeader, sendScopeOnToken: false,
+                // Public client (PKCE, no secret) — send client_id in the body.
+                clientAuth: .body, sendScopeOnToken: false,
                 extraAuthParams: [:],
                 // Zoom rejects http loopback; use an HTTPS page that forwards
                 // the code to the local listener on 127.0.0.1:8765.

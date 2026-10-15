@@ -5,6 +5,8 @@ MeetPaw.app/
 # never commit OAuth credentials
 credentials.json
 client_secret*.json
+# Bundled client IDs/secrets for official builds (ship in the DMG, not the repo)
+Sources/MeetPaw/Resources/credentials-bundled.json
 
 # Website lives in its own private repo (meetpaw-web)
 site/

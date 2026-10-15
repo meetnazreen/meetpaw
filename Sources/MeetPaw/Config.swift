@@ -15,8 +15,18 @@ struct Credentials {
     }
 
     static func load(_ provider: Provider) -> Credentials? {
-        guard let data = try? Data(contentsOf: fileURL(for: provider)) else { return nil }
-        // Accept a bare {client_id, client_secret?} or Google's {"installed": {...}}.
+        // 1. A user-supplied file in ~/.config/meetpaw overrides the bundled default
+        //    (lets people build from source with their own OAuth apps).
+        if let data = try? Data(contentsOf: fileURL(for: provider)),
+           let c = fromData(data) {
+            return c
+        }
+        // 2. Credentials bundled with the official build (not committed to the repo).
+        return bundled(provider)
+    }
+
+    /// Accept a bare {client_id, client_secret?} or Google's {"installed": {...}}.
+    private static func fromData(_ data: Data) -> Credentials? {
         if let c = decode(data) { return c }
         if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let inner = obj["installed"] as? [String: Any],
@@ -24,6 +34,17 @@ struct Credentials {
             return decode(d)
         }
         return nil
+    }
+
+    /// Reads `credentials-bundled.json` shipped in the app bundle, keyed by
+    /// provider ("google" / "zoom" / "microsoft"). Absent in source checkouts.
+    private static func bundled(_ provider: Provider) -> Credentials? {
+        guard let url = Bundle.module.url(forResource: "credentials-bundled", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let entry = obj[provider.rawValue] as? [String: Any],
+              let d = try? JSONSerialization.data(withJSONObject: entry) else { return nil }
+        return decode(d)
     }
 
     private static func decode(_ data: Data) -> Credentials? {
