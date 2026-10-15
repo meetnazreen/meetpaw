@@ -70,7 +70,7 @@ final class LoopbackListener {
             // on meetpaw.app so the user lands on our domain with the real logo.
             let response = """
             HTTP/1.1 302 Found\r
-            Location: https://meetpaw.app/signed-in\r
+            Location: https://meetpaw.app/signed-in/\r
             Content-Length: 0\r
             Connection: close\r
             \r
