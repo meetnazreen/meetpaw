@@ -1,7 +1,11 @@
 <p align="center">
+  <img src="docs/icon.png" alt="MeetPaw" width="104" height="104">
+</p>
+
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/logo-white.png">
-    <img src="docs/logo.png" alt="MeetPaw" width="320">
+    <img src="docs/logo.png" alt="MeetPaw" width="300">
   </picture>
 </p>
 
@@ -9,9 +13,14 @@
 <p align="center">One-click Google Meet, Zoom &amp; Teams links, calendar sync, conflict detection, and global shortcuts for macOS.</p>
 
 <p align="center">
+  <a href="https://github.com/meetnazreen/meetpaw/releases/latest/download/MeetPaw.dmg"><img alt="Download MeetPaw.dmg" src="https://img.shields.io/badge/Download-MeetPaw.dmg-EA580C?style=for-the-badge&logo=apple&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/meetnazreen/meetpaw/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/meetnazreen/meetpaw?color=EA580C"></a>
+  <a href="https://github.com/meetnazreen/meetpaw/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/meetnazreen/meetpaw/total?color=2ea44f&label=downloads"></a>
   <img alt="Platform" src="https://img.shields.io/badge/macOS-14%2B-111?logo=apple&logoColor=white">
-  <img alt="Swift" src="https://img.shields.io/badge/SwiftUI-native-EA580C?logo=swift&logoColor=white">
-  <img alt="Dependencies" src="https://img.shields.io/badge/dependencies-zero-2ea44f">
+  <img alt="Swift" src="https://img.shields.io/badge/SwiftUI-native-blue?logo=swift&logoColor=white">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
@@ -36,11 +45,31 @@ Built natively in **SwiftUI with zero third-party dependencies**, MeetPaw is fas
 - 🔒 &nbsp;**Private by design**: tokens live only in your Keychain, no servers, no tracking
 - 🆓 &nbsp;**Free and open source** under the MIT license
 
+## Features
+
+**One click, link in hand.** MeetPaw opens a meeting on your chosen provider, copies the link to your clipboard, and launches it, all before you reach for a browser tab.
+
+![Instant meeting demo](docs/gifs/instant.gif)
+
+**Every meeting in one list.** Add up to five Google, Zoom, and Teams accounts. MeetPaw blends them into a single timeline sorted by time, with one-click join and a heads-up 15 minutes before each call.
+
+![Merged upcoming list demo](docs/gifs/accounts.gif)
+
+**Schedule without a browser.** Set a title, date, time, and guests, pick a provider, and MeetPaw books the event with a ready-to-join link, flagging any clash across your calendars. Edit or delete with a swipe.
+
+![Scheduling demo](docs/gifs/schedule.gif)
+
+**Start a meeting without lifting your hands.** Global shortcuts spin up a meeting from any app: ⌘⇧M for Google Meet, ⌘⇧Z for Zoom, ⌘⇧T for Teams.
+
+![Global shortcuts demo](docs/gifs/shortcuts.gif)
+
 ## Download
 
+> **Latest release: [v0.1.0](https://github.com/meetnazreen/meetpaw/releases/latest)** — the first public release. See the [release notes](https://github.com/meetnazreen/meetpaw/releases/latest).
+
 Grab the latest **`MeetPaw.dmg`** from the
-[**Releases page**](https://github.com/meetnazreen/meetpaw/releases/latest),
-open it, and drag MeetPaw to Applications.
+[**Releases page**](https://github.com/meetnazreen/meetpaw/releases/latest)
+(or the button above), open it, and drag MeetPaw to Applications.
 
 > MeetPaw isn't notarized yet, so on first launch Gatekeeper will warn you.
 > Right-click the app → **Open**, then confirm (or **System Settings → Privacy
